@@ -1,0 +1,427 @@
+USE [DS_HSDW_Prod]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+SET NOCOUNT ON;
+
+DECLARE @StartDate	DATE 
+DECLARE @EndDate		SMALLDATETIME
+
+/*	Completed visit dates	*/
+SET @StartDate = '6/1/2024'
+SET @EndDate = CAST(GETDATE() AS DATE)
+
+-- Convert dates to BIGINT to allow filtering on DateKeys.
+DECLARE @locStartDateKey BIGINT = CAST(CONVERT(CHAR(8), @StartDate, 112) AS BIGINT);
+DECLARE @locEndDateKey BIGINT = CAST(CONVERT(CHAR(8), DATEADD(DAY, 1, @EndDate), 112) AS BIGINT);
+
+IF OBJECT_ID('tempdb..#prov_study ') IS NOT NULL
+DROP TABLE #prov_study
+
+IF OBJECT_ID('tempdb..#ee_index ') IS NOT NULL
+DROP TABLE #ee_index
+
+IF OBJECT_ID('tempdb..#prov_index ') IS NOT NULL
+DROP TABLE #prov_index
+;
+-- This CTE parses out the study provider computing id from the email address in the source data table
+--WITH cte_study (Provider_Name, Provider_Email, first_name, last_name, RowId, ComputingId)
+WITH cte_study (Provider_Name, Provider_Email, first_name, last_name, ComputingId)
+AS (SELECT DISTINCT
+           list.Provider_Name,
+		   list.Provider_Email,
+           --CASE
+           --    WHEN CHARINDEX(' ', list.first_name) > 0 THEN
+           --        SUBSTRING(list.first_name, 1, CHARINDEX(' ', list.first_name) - 1)
+           --    ELSE
+           --        list.first_name
+           --END AS [first_name],
+		   list.first_name,
+		   --list.last_name,
+           CASE
+               WHEN CHARINDEX(' ', list.last_name) > 0 THEN
+                   --SUBSTRING(list.last_name, 1, CHARINDEX(' ', list.last_name) - 1)
+                   SUBSTRING(list.last_name, CHARINDEX(' ', list.last_name) + 1,150)
+               ELSE
+                   list.last_name
+           END AS [last_name],
+		   --list.RowId,
+		   list.ComputingId
+    FROM
+    (
+        SELECT email.Provider_Name,
+			   email.Provider_Email,
+               --SUBSTRING(email.Provider_Name, CHARINDEX(' ', email.Provider_Name) + 1, LEN(email.Provider_Name) - CHARINDEX(' ', email.Provider_Name)) AS [first_name],
+               SUBSTRING(email.Provider_Name, CHARINDEX(' ', email.Provider_Name) + 1, LEN(email.Provider_Name) - CHARINDEX(' ', email.Provider_Name)) AS [last_name],
+               --SUBSTRING(email.Provider_Name, 1, CHARINDEX(' ', email.Provider_Name) - 2) AS [last_name],
+               --SUBSTRING(email.Provider_Name, 1, CHARINDEX(' ', email.Provider_Name) - 2) AS [first_name],
+               SUBSTRING(email.Provider_Name, 1, CHARINDEX(' ', email.Provider_Name) - 1) AS [first_name],
+			   --email.RowId,
+		       CASE WHEN CHARINDEX('@',email.Provider_Email,1) > 0 THEN UPPER(LEFT(email.Provider_Email,CHARINDEX('@',email.Provider_Email,1) - 1)) ELSE NULL END AS ComputingId
+        FROM [DS_HSDW_Prod].Rptg.TEMP_Nuance_DAX_Study_Provider email
+        WHERE 1 = 1
+              AND email.Provider_Email IS NOT NULL
+			  AND email.Rollout_Wave_Assignment IN ('Wave 1','Wave 2','Wave 3','Wave 4','Wave 5')
+    ) list)
+
+SELECT * INTO #prov_study FROM cte_study
+CREATE CLUSTERED INDEX  study ON #prov_study (ComputingId)
+
+SELECT
+	*
+FROM #prov_study
+ORDER BY
+	ComputingId
+;
+-- This CTE parses out the employee computing id from the email address in the EmployeeDim table
+-- It also parses out the employee's First Name and Last Name from EmployeeDim.Name.
+-- The outer SELECT is used to remove the Middle Initial / Name.
+--WITH cte_ee (EmployeeDurableKey, Name, Email, first_name, last_name, ComputingId)
+--WITH cte_ee (EmployeeDurableKey, Name, Email, ComputingId)
+WITH cte_ee (EmployeeUserId, Name, first_name, last_name, ComputingId, ProviderId)
+AS (SELECT list.EmployeeUserId,
+           list.Name,
+		   --list.Email,
+           CASE
+               WHEN list.NoComma = 0 AND CHARINDEX(' ', list.first_name) > 0 THEN
+                   SUBSTRING(list.first_name, 1, CHARINDEX(' ', list.first_name) - 1)
+               ELSE
+                   list.first_name
+           END AS [first_name],
+		   list.last_name,
+		   list.ComputingId,
+		   list.ProviderId
+    FROM
+    (
+        SELECT ee.EMPlye_Usr_ID AS [EmployeeUserId],
+               ee.EMPlye_Nme AS [Name],
+			   --ee.Email,
+               --SUBSTRING(ee.EMPlye_Nme, CHARINDEX(' ', ee.EMPlye_Nme) + 1, LEN(ee.EMPlye_Nme) - CHARINDEX(' ', ee.EMPlye_Nme)) AS [first_name],
+               --SUBSTRING(ee.EMPlye_Nme, 1, CHARINDEX(' ', ee.EMPlye_Nme) - 2) AS [last_name],
+               CASE WHEN CHARINDEX(',', TRIM(ee.EMPlye_Nme)) = 0 THEN 1 ELSE 0 END AS NoComma,
+               CASE WHEN CHARINDEX(',', TRIM(ee.EMPlye_Nme)) = 0 THEN TRIM(ee.EMPlye_Nme)
+			              ELSE TRIM(SUBSTRING(TRIM(ee.EMPlye_Nme), CHARINDEX(',', TRIM(ee.EMPlye_Nme)) + 1, LEN(TRIM(ee.EMPlye_Nme)) - CHARINDEX(',', TRIM(ee.EMPlye_Nme)))) END AS [first_name],
+               CASE WHEN CHARINDEX(',', TRIM(ee.EMPlye_Nme)) = 0 THEN NULL
+			              ELSE SUBSTRING(TRIM(ee.EMPlye_Nme), 1, CHARINDEX(',', TRIM(ee.EMPlye_Nme)) - 1) END AS [last_name],
+		       --CASE WHEN LEN(ee.Email) > 0 AND CHARINDEX('@',ee.[Email],1) > 0 THEN UPPER(LEFT(ee.[Email],CHARINDEX('@',ee.[Email],1) - 1)) ELSE NULL END AS ComputingId
+		       ee.EMPlye_Systm_Login AS ComputingId,
+			   ee.EMPlye_PROV_ID AS ProviderId
+        FROM [DS_HSDW_Prod].[dbo].[Dim_Clrt_EMPlye] ee
+        WHERE 1 = 1
+              --AND prov.DurableKey = @ProviderDurableKey
+              --AND ee.IsCurrent = 1
+			  --AND LEN(ee.Email) > 0
+			  --AND CHARINDEX('@',ee.[Email],1) > 0
+    ) list )
+
+SELECT * INTO #ee_index FROM cte_ee
+CREATE CLUSTERED INDEX  ee ON #ee_index (EmployeeUserId)
+
+SELECT
+	*
+FROM #ee_index
+ORDER BY
+	ComputingId
+;
+
+-- This CTE parses out the provider's First Name and Last Name from ProviderDim.Name.
+-- The outer SELECT is used to remove the Middle Initial / Name.
+--WITH cte_prov (ProviderDurableKey, Name, Email, first_name, last_name, EmployeeDurableKey, ComputingId, RowId)
+--WITH cte_prov (ProviderDurableKey, Name, Email, first_name, last_name, EmployeeDurableKey, ComputingId, PrimarySpecialty, IndexSpecialty, OfficeAddress, IndexLocation, Type, PrimaryLocation, PrimaryDepartment, ProviderEpicId)
+WITH cte_prov (Name, Email, first_name, last_name, Usr_ID, ComputingId, [Type], ProviderEpicId)
+AS (SELECT
+           --list.ProviderDurableKey,
+           list.Prov_Nme AS [Name],
+		   list.Email,
+           CASE
+               WHEN CHARINDEX(' ', list.first_name) > 0 THEN
+                   SUBSTRING(list.first_name, 1, CHARINDEX(' ', list.first_name) - 1)
+               ELSE
+                   list.first_name
+           END AS [first_name],
+           list.last_name,
+		   list.Usr_ID,
+		   list.ComputingId,
+		   --list.RowId
+		   --list.PrimarySpecialty,
+		   --COALESCE(list.PrimarySpecialty, list.Type) AS IndexSpecialty,
+		   --list.OfficeAddress,
+		   --list.OfficeAddress AS IndexLocation,
+		   list.Type,
+		   --list.PrimaryLocation,
+		   --list.PrimaryDepartment,
+		   list.ProviderEpicId
+    FROM
+    (
+        SELECT
+			   --prov.DurableKey AS [ProviderDurableKey],
+               prov.Prov_Nme,
+			   email.Provider_Email AS Email,
+               SUBSTRING(prov.Prov_Nme, CHARINDEX(' ', prov.Prov_Nme) + 1, LEN(prov.Prov_Nme) - CHARINDEX(' ', prov.Prov_Nme)) AS [first_name],
+               SUBSTRING(prov.Prov_Nme, 1, CHARINDEX(' ', prov.Prov_Nme) - 2) AS [last_name],
+			   prov.Usr_ID,
+			   ee.ComputingId,
+			   --email.RowId
+			   --CASE WHEN LEN(prov.PrimarySpecialty) > 0 THEN prov.PrimarySpecialty ELSE NULL END AS PrimarySpecialty,
+			   --prov.OfficeAddress,
+			   prov.Prov_Typ AS [Type],
+			   --prov.PrimaryLocation,
+			   --prov.PrimaryDepartment,
+			   prov.PROV_ID AS ProviderEpicId
+        --FROM #ee_index ee
+        FROM
+		(
+		SELECT
+			ee.EmployeeUserId,
+            --ee.EMPlye_Nme,
+            --ee.Email,
+            --ee.first_name,
+            --ee.last_name,
+            ee.ComputingId
+		FROM #ee_index ee
+		WHERE 1 = 1
+		--AND LEN(ee.Email) > 0
+		--AND CHARINDEX('@',ee.[Email],1) > 0
+		) ee
+		INNER JOIN #prov_study email
+			ON ee.ComputingId = email.ComputingId
+		LEFT JOIN [DS_HSDW_Prod].[dbo].[Dim_Clrt_SERsrc] prov
+			ON prov.Usr_ID = ee.EmployeeUserId
+        WHERE 1 = 1
+              --AND prov.DurableKey = @ProviderDurableKey
+              --AND prov.IsCurrent = 1
+    ) list )
+
+SELECT * INTO #prov_index FROM cte_prov
+CREATE CLUSTERED INDEX  prov ON #prov_index (Usr_ID)
+
+SELECT --DISTINCT
+	--IndexSpecialty,
+ --   IndexLocation
+	*
+FROM #prov_index
+ORDER BY
+	--IndexLocation,
+	--IndexSpecialty
+	Usr_ID
+/*
+;
+-- This CTE parses out the employee computing id from the email address in the EmployeeDim table
+-- It also parses out the employee's First Name and Last Name from EmployeeDim.Name.
+-- The outer SELECT is used to remove the Middle Initial / Name.
+WITH cte_ee (EmployeeDurableKey, Name, Email, first_name, last_name, ComputingId)
+--WITH cte_ee (EmployeeDurableKey, Name, Email, ComputingId)
+AS (SELECT list.EmployeeDurableKey,
+           list.Name,
+		   list.Email,
+           CASE
+               WHEN list.NoComma = 0 AND CHARINDEX(' ', list.first_name) > 0 THEN
+                   SUBSTRING(list.first_name, 1, CHARINDEX(' ', list.first_name) - 1)
+               ELSE
+                   list.first_name
+           END AS [first_name],
+		   list.last_name,
+		   list.ComputingId
+    FROM
+    (
+        SELECT ee.DurableKey AS [EmployeeDurableKey],
+               ee.EMPlye_Nme,
+			   ee.Email,
+               --SUBSTRING(ee.EMPlye_Nme, CHARINDEX(' ', ee.EMPlye_Nme) + 1, LEN(ee.EMPlye_Nme) - CHARINDEX(' ', ee.EMPlye_Nme)) AS [first_name],
+               --SUBSTRING(ee.EMPlye_Nme, 1, CHARINDEX(' ', ee.EMPlye_Nme) - 2) AS [last_name],
+               CASE WHEN CHARINDEX(',', TRIM(ee.EMPlye_Nme)) = 0 THEN 1 ELSE 0 END AS NoComma,
+               CASE WHEN CHARINDEX(',', TRIM(ee.EMPlye_Nme)) = 0 THEN TRIM(ee.EMPlye_Nme)
+			              ELSE TRIM(SUBSTRING(TRIM(ee.EMPlye_Nme), CHARINDEX(',', TRIM(ee.EMPlye_Nme)) + 1, LEN(TRIM(ee.EMPlye_Nme)) - CHARINDEX(',', TRIM(ee.EMPlye_Nme)))) END AS [first_name],
+               CASE WHEN CHARINDEX(',', TRIM(ee.EMPlye_Nme)) = 0 THEN NULL
+			              ELSE SUBSTRING(TRIM(ee.EMPlye_Nme), 1, CHARINDEX(',', TRIM(ee.EMPlye_Nme)) - 1) END AS [last_name],
+		       CASE WHEN LEN(ee.Email) > 0 AND CHARINDEX('@',ee.[Email],1) > 0 THEN UPPER(LEFT(ee.[Email],CHARINDEX('@',ee.[Email],1) - 1)) ELSE NULL END AS ComputingId
+        FROM [CDW].[FullAccess].[EmployeeDim] ee
+        WHERE 1 = 1
+              --AND prov.DurableKey = @ProviderDurableKey
+              AND ee.IsCurrent = 1
+			  --AND LEN(ee.Email) > 0
+			  --AND CHARINDEX('@',ee.[Email],1) > 0
+    ) list )
+
+SELECT * INTO #ee_index FROM cte_ee
+CREATE CLUSTERED INDEX  ee ON #ee_index (EmployeeDurableKey)
+
+--SELECT
+--	*
+--FROM #ee_index
+--ORDER BY
+--	EmployeeDurableKey
+;
+
+-- This CTE parses out the provider's First Name and Last Name from ProviderDim.Name.
+-- The outer SELECT is used to remove the Middle Initial / Name.
+--WITH cte_prov (ProviderDurableKey, Name, Email, first_name, last_name, EmployeeDurableKey, ComputingId, RowId)
+WITH cte_prov (ProviderDurableKey, Name, Email, first_name, last_name, EmployeeDurableKey, ComputingId, PrimarySpecialty, IndexSpecialty, OfficeAddress, IndexLocation, Type, PrimaryLocation, PrimaryDepartment, ProviderEpicId)
+AS (SELECT list.ProviderDurableKey,
+           list.Name,
+		   list.Email,
+           CASE
+               WHEN CHARINDEX(' ', list.first_name) > 0 THEN
+                   SUBSTRING(list.first_name, 1, CHARINDEX(' ', list.first_name) - 1)
+               ELSE
+                   list.first_name
+           END AS [first_name],
+           list.last_name,
+		   list.EmployeeDurableKey,
+		   list.ComputingId,
+		   --list.RowId
+		   list.PrimarySpecialty,
+		   COALESCE(list.PrimarySpecialty, list.Type) AS IndexSpecialty,
+		   list.OfficeAddress,
+		   list.OfficeAddress AS IndexLocation,
+		   list.Type,
+		   list.PrimaryLocation,
+		   list.PrimaryDepartment,
+		   list.ProviderEpicId
+    FROM
+    (
+        SELECT prov.DurableKey AS [ProviderDurableKey],
+               prov.Name,
+			   ee.Email,
+               SUBSTRING(prov.Name, CHARINDEX(' ', prov.Name) + 1, LEN(prov.Name) - CHARINDEX(' ', prov.Name)) AS [first_name],
+               SUBSTRING(prov.Name, 1, CHARINDEX(' ', prov.Name) - 2) AS [last_name],
+			   prov.EmployeeDurableKey,
+			   ee.ComputingId,
+			   --email.RowId
+			   CASE WHEN LEN(prov.PrimarySpecialty) > 0 THEN prov.PrimarySpecialty ELSE NULL END AS PrimarySpecialty,
+			   prov.OfficeAddress,
+			   prov.Type,
+			   prov.PrimaryLocation,
+			   prov.PrimaryDepartment,
+			   prov.ProviderEpicId
+        --FROM #ee_index ee
+        FROM
+		(
+		SELECT
+			ee.EmployeeDurableKey,
+            --ee.EMPlye_Nme,
+            ee.Email,
+            --ee.first_name,
+            --ee.last_name,
+            ee.ComputingId
+		FROM #ee_index ee
+		WHERE 1 = 1
+		AND LEN(ee.Email) > 0
+		AND CHARINDEX('@',ee.[Email],1) > 0
+		) ee
+		INNER JOIN #prov_study email
+			ON ee.ComputingId = email.ComputingId
+		LEFT JOIN [CDW].[FullAccess].[ProviderDim] prov
+			ON prov.EmployeeDurableKey = ee.EmployeeDurableKey
+        WHERE 1 = 1
+              --AND prov.DurableKey = @ProviderDurableKey
+              AND prov.IsCurrent = 1
+    ) list )
+
+SELECT * INTO #prov_index FROM cte_prov
+CREATE CLUSTERED INDEX  prov ON #prov_index (ProviderDurableKey, EmployeeDurableKey)
+
+--SELECT --DISTINCT
+--	--IndexSpecialty,
+-- --   IndexLocation
+--	*
+--FROM #prov_index
+--ORDER BY
+--	--IndexLocation,
+--	--IndexSpecialty
+--	ProviderDurableKey
+
+--	WITH provider_list AS (
+--    SELECT DISTINCT computing_id
+--    FROM your_provider_excel_import -- Replace with real import table or CTE
+--),
+
+--provider_dim AS (
+--    SELECT ProviderKey, ProviderEpicId, Name AS computing_id
+--    FROM dbo.ProviderDim
+--    WHERE IsCurrent = 1
+--),
+;
+WITH
+note_agg AS (
+    SELECT
+        p.ComputingId AS computing_id,
+        CAST(cn.CreationInstant AS DATE) AS activity_date,
+        COUNT(*) AS notes_written,
+        SUM(CASE WHEN DATEPART(HOUR, cn.LastEditedInstant) >= 18 THEN TotalEditTime ELSE 0 END) / 60.0 AS pajama_minutes,
+        SUM(TotalEditTime) / 60.0 AS total_note_minutes,
+        SUM(ISNULL(cn.ManualSourceCharCount, 0) + ISNULL(TemplateSourceCharCount, 0) + ISNULL(NoSourceCharCount, 0)) AS total_note_characters
+    FROM [CDW].FullAccess.ClinicalNoteFact cn
+    JOIN #prov_index p ON cn.AuthoringProviderDurableKey = p.ProviderDurableKey
+    WHERE cn.Status = 'Signed'
+      AND cn.CreationInstant >= '2024-06-01'
+    GROUP BY p.ComputingId, CAST(cn.CreationInstant AS DATE)
+),
+
+--SELECT
+--	*
+--FROM note_agg
+--ORDER BY
+--	note_agg.computing_id,
+--	note_agg.activity_date
+	
+--SELECT DISTINCT
+--	note_agg.computing_id
+--FROM note_agg
+--ORDER BY
+--	note_agg.computing_id
+
+appt_agg AS (
+    SELECT
+        p.ComputingId AS computing_id,
+        CAST(e.Date AS DATE) AS activity_date,
+        COUNT(DISTINCT e.EncounterKey) AS appointments_seen
+    FROM [CDW].FullAccess.EncounterFact e
+    JOIN #prov_index p ON e.ProviderDurableKey = p.ProviderDurableKey
+    WHERE CAST(e.Date AS DATE)>= '2024-06-01'
+	AND e.Type IN ('Appointment','Office Visit')
+    GROUP BY p.ComputingId, CAST(e.Date AS DATE)
+)
+
+--SELECT
+--	*
+--FROM appt_agg
+--ORDER BY
+--	appt_agg.computing_id,
+--	appt_agg.activity_date
+
+--SELECT DISTINCT
+--	appt_agg.computing_id
+--FROM appt_agg
+--ORDER BY
+--	appt_agg.computing_id
+
+-- Final output
+SELECT
+    cal.ComputingId,
+    cal.activity_date,
+    COALESCE(na.total_note_minutes, 0) AS note_minutes,
+    COALESCE(na.pajama_minutes, 0) AS pajama_minutes,
+    COALESCE(na.total_note_characters, 0) AS total_note_characters,
+    COALESCE(na.notes_written, 0) AS notes_written,
+    COALESCE(aa.appointments_seen, 0) AS appointments_seen
+FROM (
+    SELECT DISTINCT
+        p.ComputingId,
+        d.DateValue AS activity_date
+    FROM #prov_index p
+    CROSS JOIN [CDW].FullAccess.DateDim d
+    WHERE d.DateValue BETWEEN '2024-06-01' AND GETDATE()
+) cal
+LEFT JOIN note_agg na ON cal.ComputingId = na.computing_id AND cal.activity_date = na.activity_date
+LEFT JOIN appt_agg aa ON cal.ComputingId = aa.computing_id AND cal.activity_date = aa.activity_date
+ORDER BY cal.ComputingId, cal.activity_date;
+*/
+GO
+
+
