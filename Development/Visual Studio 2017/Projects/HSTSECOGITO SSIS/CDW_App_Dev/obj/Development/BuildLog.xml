@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<BuildLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectInfo>
+    <Name>CDW_App_Dev</Name>
+    <LastWriteTime>2025-11-19T19:57:00.5360327Z</LastWriteTime>
+    <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
+  </ProjectInfo>
+  <LastBuildInfos>
+    <ProjectBuildItemInfo>
+      <Name>Load Rptg TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider.dtsx</Name>
+      <LastWriteTime>2025-04-14T17:54:24.9741288Z</LastWriteTime>
+      <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
+    </ProjectBuildItemInfo>
+    <ProjectBuildItemInfo>
+      <Name>Load Rptg TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider 20250617.dtsx</Name>
+      <LastWriteTime>2025-06-17T14:05:30.67214Z</LastWriteTime>
+      <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
+    </ProjectBuildItemInfo>
+    <ProjectBuildItemInfo>
+      <Name>Load Rptg TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider 20251118.dtsx</Name>
+      <LastWriteTime>2025-11-19T19:56:52.4422847Z</LastWriteTime>
+      <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
+    </ProjectBuildItemInfo>
+  </LastBuildInfos>
+</BuildLog>

@@ -1,0 +1,1503 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="4/7/2025 4:48:42 PM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="2UA80328ZK"
+  DTS:CreatorName="HSCDOM\tmb4f"
+  DTS:DTSID="{E79BC2B5-D3DD-44B1-82F8-7BC9F5BD684B}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="15.0.1100.123"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="Load Rptg TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider 20250617"
+  DTS:PackageType="5"
+  DTS:VersionBuild="18"
+  DTS:VersionGUID="{53AB358B-B687-4368-A832-CA9C88ED447A}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[Excel Connection Manager]"
+      DTS:CreationName="EXCEL"
+      DTS:DTSID="{A87C224C-CA84-4E36-BCAB-4B5BEB46BAAB}"
+      DTS:ObjectName="Excel Connection Manager">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="Provider=Microsoft.ACE.OLEDB.12.0;Data Source=F:\Workspaces\Development\Workspaces - GitRepositories\DAX\Excel Documents\DAX Copilot - Provider &amp; License Tracking.xlsx;Extended Properties=&quot;EXCEL 12.0 XML;HDR=YES&quot;;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[HSTSECOGITO.CDW_App_Dev]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{8DF9DFF7-C149-49E0-8CB0-16F2715700FA}"
+      DTS:ObjectName="HSTSECOGITO.CDW_App_Dev">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="Data Source=HSTSECOGITO;Initial Catalog=CDW_App_Dev;Provider=SQLNCLI11.1;Integrated Security=SSPI;Auto Translate=False;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables />
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\DFT Load Destination"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="Data Flow Task"
+      DTS:DTSID="{EC658B1D-8648-454C-85EC-3DB9EAE07980}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="DFT Load Destination"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\DFT Load Destination\Derived Column"
+              componentClassID="Microsoft.DerivedColumn"
+              contactInfo="Derived Column;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0"
+              description="Creates new column values by applying expressions to transformation input columns. Create new columns or overwrite existing ones. For example, concatenate the values from the 'first name' and 'last name' column to make a 'full name' column."
+              name="Derived Column"
+              usesDispositions="true">
+              <inputs>
+                <input
+                  refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input]"
+                  description="Input to the Derived Column Transformation"
+                  name="Derived Column Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Submitter Name]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Submitter Name"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Name]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Submitter Email]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Submitter Email"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Email]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider Name]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider Name"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Name]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider's UVA Health Email]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider's UVA Health Email"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's UVA Health Email]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider Duplicate]"
+                      cachedDataType="r8"
+                      cachedName="Provider Duplicate"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Duplicate]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Rollout Wave Assignment]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Rollout Wave Assignment"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Rollout Wave Assignment]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider Affiliation]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider Affiliation"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Affiliation]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider's Total FTE]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider's Total FTE"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Total FTE]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider's Clinic FTE]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider's Clinic FTE"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Clinic FTE]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider's Specialty]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider's Specialty"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Specialty]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider's Location (Main Clinic)]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider's Location (Main Clinic)"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Location (Main Clinic)]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider's Weekday(s) in Clinic ]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider's Weekday(s) in Clinic "
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Weekday(s) in Clinic ]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Notes]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Notes"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Notes]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[Provider Champion?]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="Provider Champion?"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Champion?]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[License Status]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="License Status"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[License Status]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input].Columns[EMP#1]"
+                      cachedDataType="wstr"
+                      cachedLength="255"
+                      cachedName="EMP#1"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[EMP#1]" />
+                  </inputColumns>
+                  <externalMetadataColumns />
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output]"
+                  description="Default Output of the Derived Column Transformation"
+                  exclusionGroup="1"
+                  name="Derived Column Output"
+                  synchronousInputId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Submitter Name]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Submitter Name]"
+                      name="Derived Submitter Name"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Name]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Submitter Name]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Submitter Email]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Submitter Email]"
+                      name="Derived Submitter Email"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Email]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Submitter Email]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Name]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Name]"
+                      name="Derived Provider Name"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Name]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider Name]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Email]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Email]"
+                      name="Derived Provider Email"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's UVA Health Email]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider's UVA Health Email]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Duplicate]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Duplicate]"
+                      name="Derived Provider Duplicate"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Duplicate]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider Duplicate]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Rollout Wave Assignment]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Rollout Wave Assignment]"
+                      name="Derived Rollout Wave Assignment"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Rollout Wave Assignment]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Rollout Wave Assignment]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Affiliation]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Affiliation]"
+                      name="Derived Provider Affiliation"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Affiliation]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider Affiliation]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Total FTE]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Total FTE]"
+                      name="Derived Provider Total FTE"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Total FTE]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider's Total FTE]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Clinic FTE]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Clinic FTE]"
+                      name="Derived Provider Clinic FTE"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Clinic FTE]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider's Clinic FTE]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Specialty]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Specialty]"
+                      name="Derived Provider Specialty"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Specialty]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider's Specialty]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Location]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Location]"
+                      name="Derived Provider Location"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Location (Main Clinic)]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider's Location (Main Clinic)]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Weekdays in Clinic]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="2000"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Weekdays in Clinic]"
+                      name="Derived Provider Weekdays in Clinic"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,2000,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Weekday(s) in Clinic ]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,2000,1252)[Provider's Weekday(s) in Clinic ]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Notes]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="2000"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Notes]"
+                      name="Derived Notes"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,2000,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Notes]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,2000,1252)Notes</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Champion]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Champion]"
+                      name="Derived Provider Champion"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Champion?]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[Provider Champion?]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider License Status]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider License Status]"
+                      name="Derived Provider License Status"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[License Status]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)[License Status]</property>
+                      </properties>
+                    </outputColumn>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Employee Epic Id]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      length="150"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Employee Epic Id]"
+                      name="Derived Employee Epic Id"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Expression"
+                          name="Expression">(DT_STR,150,1252)#{Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[EMP#1]}</property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Derived Column Friendly Expression"
+                          expressionType="Notify"
+                          name="FriendlyExpression">(DT_STR,150,1252)EMP#{Package\DFT Load Destination\187:invalid}</property>
+                      </properties>
+                    </outputColumn>
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+                <output
+                  refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Error Output]"
+                  description="Error Output of the Derived Column Transformation"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="Derived Column Error Output"
+                  synchronousInputId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\DFT Load Destination\Excel Source"
+              componentClassID="Microsoft.ExcelSource"
+              contactInfo="Excel Source;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;1"
+              description="Excel Source"
+              name="Excel Source"
+              usesDispositions="true"
+              version="1">
+              <properties>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the name of the database object used to open a rowset."
+                  name="OpenRowset">'Nuance DAX Expansion - Provider$'</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the variable that contains the name of the database object used to open a rowset."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="The SQL command to be executed."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                <property
+                  dataType="System.String"
+                  description="The variable that contains the SQL command to be executed."
+                  name="SqlCommandVariable"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the mode used to access the database."
+                  name="AccessMode"
+                  typeConverter="AccessMode">0</property>
+                <property
+                  dataType="System.String"
+                  description="The mapping from parameters in the SQL command to variables."
+                  name="ParameterMapping"></property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\DFT Load Destination\Excel Source.Connections[OleDbConnection]"
+                  connectionManagerID="Package.ConnectionManagers[Excel Connection Manager]"
+                  connectionManagerRefId="Package.ConnectionManagers[Excel Connection Manager]"
+                  description="The OLE DB runtime connection used to access the database."
+                  name="OleDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output]"
+                  name="Excel Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Name]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Submitter Name]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Name]"
+                      name="Submitter Name"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Email]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Submitter Email]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Submitter Email]"
+                      name="Submitter Email"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Name]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Name]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Name]"
+                      name="Provider Name"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's UVA Health Email]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's UVA Health Email]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's UVA Health Email]"
+                      name="Provider's UVA Health Email"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Duplicate]"
+                      dataType="r8"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Duplicate]"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Duplicate]"
+                      name="Provider Duplicate"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Rollout Wave Assignment]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Rollout Wave Assignment]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Rollout Wave Assignment]"
+                      name="Rollout Wave Assignment"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Affiliation]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Affiliation]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Affiliation]"
+                      name="Provider Affiliation"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Total FTE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Total FTE]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Total FTE]"
+                      name="Provider's Total FTE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Clinic FTE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Clinic FTE]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Clinic FTE]"
+                      name="Provider's Clinic FTE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Specialty]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Specialty]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Specialty]"
+                      name="Provider's Specialty"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Location (Main Clinic)]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Location (Main Clinic)]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Location (Main Clinic)]"
+                      name="Provider's Location (Main Clinic)"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Weekday(s) in Clinic ]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Weekday(s) in Clinic ]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider's Weekday(s) in Clinic ]"
+                      name="Provider's Weekday(s) in Clinic "
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Notes]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Notes]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Notes]"
+                      name="Notes"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Champion?]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Champion?]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[Provider Champion?]"
+                      name="Provider Champion?"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[License Status]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[License Status]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[License Status]"
+                      name="License Status"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[EMP#1]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[EMP#1]"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].Columns[EMP#1]"
+                      name="EMP#1"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Submitter Name]"
+                      dataType="wstr"
+                      length="255"
+                      name="Submitter Name" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Submitter Email]"
+                      dataType="wstr"
+                      length="255"
+                      name="Submitter Email" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Name]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider Name" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's UVA Health Email]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider's UVA Health Email" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Duplicate]"
+                      dataType="r8"
+                      name="Provider Duplicate" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Rollout Wave Assignment]"
+                      dataType="wstr"
+                      length="255"
+                      name="Rollout Wave Assignment" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Affiliation]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider Affiliation" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Total FTE]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider's Total FTE" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Clinic FTE]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider's Clinic FTE" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Specialty]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider's Specialty" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Location (Main Clinic)]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider's Location (Main Clinic)" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider's Weekday(s) in Clinic ]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider's Weekday(s) in Clinic " />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Notes]"
+                      dataType="wstr"
+                      length="255"
+                      name="Notes" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[Provider Champion?]"
+                      dataType="wstr"
+                      length="255"
+                      name="Provider Champion?" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[License Status]"
+                      dataType="wstr"
+                      length="255"
+                      name="License Status" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output].ExternalColumns[EMP#1]"
+                      dataType="r8"
+                      name="EMP#1" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output]"
+                  isErrorOut="true"
+                  name="Excel Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Submitter Name]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Submitter Name]"
+                      name="Submitter Name" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Submitter Email]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Submitter Email]"
+                      name="Submitter Email" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Name]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Name]"
+                      name="Provider Name" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's UVA Health Email]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's UVA Health Email]"
+                      name="Provider's UVA Health Email" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Duplicate]"
+                      dataType="r8"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Duplicate]"
+                      name="Provider Duplicate" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Rollout Wave Assignment]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Rollout Wave Assignment]"
+                      name="Rollout Wave Assignment" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Affiliation]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Affiliation]"
+                      name="Provider Affiliation" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Total FTE]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Total FTE]"
+                      name="Provider's Total FTE" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Clinic FTE]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Clinic FTE]"
+                      name="Provider's Clinic FTE" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Specialty]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Specialty]"
+                      name="Provider's Specialty" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Location (Main Clinic)]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Location (Main Clinic)]"
+                      name="Provider's Location (Main Clinic)" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Weekday(s) in Clinic ]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider's Weekday(s) in Clinic ]"
+                      name="Provider's Weekday(s) in Clinic " />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Notes]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Notes]"
+                      name="Notes" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Champion?]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[Provider Champion?]"
+                      name="Provider Champion?" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[License Status]"
+                      dataType="wstr"
+                      length="255"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[License Status]"
+                      name="License Status" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[EMP#1]"
+                      dataType="r8"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[EMP#1]"
+                      name="EMP#1" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\DFT Load Destination\OLE DB Destination"
+              componentClassID="Microsoft.OLEDBDestination"
+              contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="OLE DB Destination"
+              name="OLE DB Destination"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the name of the database object used to open a rowset."
+                  name="OpenRowset">[Rptg].[TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider]</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the variable that contains the name of the database object used to open a rowset."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="The SQL command to be executed."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the column code page to use when code page information is unavailable from the data source."
+                  name="DefaultCodePage">1252</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Forces the use of the DefaultCodePage property value when describing character data."
+                  name="AlwaysUseDefaultCodePage">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the mode used to access the database."
+                  name="AccessMode"
+                  typeConverter="AccessMode">3</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the values supplied for identity columns will be copied to the destination. If false, values for identity columns will be auto-generated at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepIdentity">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the columns containing null will have null inserted in the destination. If false, columns containing null will have their default values inserted at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepNulls">false</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies options to be used with fast load.  Applies only if fast load is turned on."
+                  name="FastLoadOptions">TABLOCK,CHECK_CONSTRAINTS</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies when commits are issued during data insertion.  A value of 0 specifies that one commit will be issued at the end of data insertion.  Applies only if fast load is turned on."
+                  name="FastLoadMaxInsertCommitSize">2147483647</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\DFT Load Destination\OLE DB Destination.Connections[OleDbConnection]"
+                  connectionManagerID="Package.ConnectionManagers[HSTSECOGITO.CDW_App_Dev]"
+                  connectionManagerRefId="Package.ConnectionManagers[HSTSECOGITO.CDW_App_Dev]"
+                  description="The OLE DB runtime connection used to access the database."
+                  name="OleDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input]"
+                  errorOrTruncationOperation="Insert"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="OLE DB Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Submitter Name]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Submitter Name"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Submitter_Name]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Submitter Name]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Name]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Name"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Name]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Name]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Email]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Email"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Email]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Email]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Submitter Email]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Submitter Email"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Submitter_Email]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Submitter Email]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Duplicate]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Duplicate"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Duplicate]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Duplicate]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Rollout Wave Assignment]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Rollout Wave Assignment"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Rollout_Wave_Assignment]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Rollout Wave Assignment]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Affiliation]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Affiliation"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Affiliation]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Affiliation]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Total FTE]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Total FTE"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Total_FTE]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Total FTE]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Clinic FTE]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Clinic FTE"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Clinic_FTE]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Clinic FTE]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Specialty]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Specialty"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Specialty]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Specialty]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Location]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Location"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Location]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Location]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Weekdays in Clinic]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="2000"
+                      cachedName="Derived Provider Weekdays in Clinic"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Weekdays_In_Clinic]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Weekdays in Clinic]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Notes]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="2000"
+                      cachedName="Derived Notes"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Notes]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Notes]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider Champion]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider Champion"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Champion]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider Champion]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Provider License Status]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Provider License Status"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_License_Status]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Provider License Status]" />
+                    <inputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Derived Employee Epic Id]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="150"
+                      cachedName="Derived Employee Epic Id"
+                      externalMetadataColumnId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_EmployeeEpicId]"
+                      lineageId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output].Columns[Derived Employee Epic Id]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Submitter_Name]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Submitter_Name" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Name]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Name" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Email]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Email" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Duplicate]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Duplicate" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Rollout_Wave_Assignment]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Rollout_Wave_Assignment" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Affiliation]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Affiliation" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Total_FTE]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Total_FTE" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Clinic_FTE]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Clinic_FTE" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Specialty]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Specialty" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Location]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Location" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Weekdays_In_Clinic]"
+                      codePage="1252"
+                      dataType="text"
+                      name="Provider_Weekdays_In_Clinic" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Notes]"
+                      codePage="1252"
+                      dataType="text"
+                      name="Notes" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_Champion]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_Champion" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_License_Status]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_License_Status" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Provider_EmployeeEpicId]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Provider_EmployeeEpicId" />
+                    <externalMetadataColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Submitter_Email]"
+                      codePage="1252"
+                      dataType="str"
+                      length="150"
+                      name="Submitter_Email" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\DFT Load Destination\OLE DB Destination.Outputs[OLE DB Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="OLE DB Destination Error Output"
+                  synchronousInputId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\DFT Load Destination\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\DFT Load Destination\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\DFT Load Destination\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\DFT Load Destination.Paths[Derived Column Output]"
+              endId="Package\DFT Load Destination\OLE DB Destination.Inputs[OLE DB Destination Input]"
+              name="Derived Column Output"
+              startId="Package\DFT Load Destination\Derived Column.Outputs[Derived Column Output]" />
+            <path
+              refId="Package\DFT Load Destination.Paths[Excel Source Output]"
+              endId="Package\DFT Load Destination\Derived Column.Inputs[Derived Column Input]"
+              name="Excel Source Output"
+              startId="Package\DFT Load Destination\Excel Source.Outputs[Excel Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\SQL Truncate Destination"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{5FF6934F-B935-4DBB-8E21-46DBB5317C08}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="SQL Truncate Destination"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{8DF9DFF7-C149-49E0-8CB0-16F2715700FA}"
+          SQLTask:SqlStatementSource="/*&#xA;DECLARE @schema VARCHAR(100)&#xA;DECLARE @Table VARCHAR(100)&#xA;DECLARE @sql NVARCHAR(500)&#xA;&#xA;SET @schema = 'Rptg'&#xA;SET @Table = 'TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider'&#xA;&#xA;SET @sql = 'TRUNCATE TABLE ' + @schema + '.' + @Table&#xA;&#xA;EXEC CDW.Epic.ExecuteSql @sql&#xA;*/&#xA;&#xA;TRUNCATE TABLE Rptg.TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{BB3A7846-608A-4F5C-96EF-8F7C9D5AB847}"
+      DTS:From="Package\SQL Truncate Destination"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\DFT Load Destination" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="179.2,41.6"
+          Id="Package\DFT Load Destination"
+          TopLeft="326.6666536861,233.653335190243" />
+        <NodeLayout
+          Size="197.6,41.6"
+          Id="Package\SQL Truncate Destination"
+          TopLeft="311.333320962059,71.4133339008755" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="413.199987324079,113.013333900876">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,120.640001289368"
+              Start="0,0"
+              End="0,113.140001289368">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,113.140001289368" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\DFT Load Destination">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="8" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="171.2,41.6"
+          Id="Package\DFT Load Destination\OLE DB Destination"
+          TopLeft="5.50000000000003,208.7" />
+        <NodeLayout
+          Size="140,41.6"
+          Id="Package\DFT Load Destination\Excel Source"
+          TopLeft="21.1,5.49999999999995" />
+        <NodeLayout
+          Size="152.8,41.6"
+          Id="Package\DFT Load Destination\Derived Column"
+          TopLeft="14.7,107.1" />
+        <EdgeLayout
+          Id="Package\DFT Load Destination.Paths[Excel Source Output]"
+          TopLeft="91.1,47.1">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,59.9999999999999"
+              Start="0,0"
+              End="0,52.4999999999999">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.4999999999999" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\DFT Load Destination.Paths[Derived Column Output]"
+          TopLeft="91.1,148.7">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,59.9999999999999"
+              Start="0,0"
+              End="0,52.4999999999999">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.4999999999999" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\DFT Load Destination\OLE DB Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\DFT Load Destination\Excel Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>
