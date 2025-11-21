@@ -1,4 +1,4 @@
-USE [CDW_App]
+USE [CLARITY]
 GO
 
 SET ANSI_NULLS ON
@@ -32,7 +32,7 @@ DROP TABLE #prov_index
 
 SELECT
 	*
-FROM [CDW_App_Dev].Rptg.TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider_20251118 email
+FROM [CLARITY_App_Dev].Rptg.TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider_20251118 email
 WHERE 1 = 1
   --      AND email.Provider_Email IS NOT NULL
 		--AND email.Rollout_Wave_Assignment IN ('Wave 1','Wave 2','Wave 3','Wave 4','Wave 5')
@@ -73,7 +73,7 @@ AS (SELECT DISTINCT
                SUBSTRING(email.Provider_Name, 1, CHARINDEX(' ', email.Provider_Name) - 1) AS [first_name],
 			   --email.RowId,
 		       CASE WHEN CHARINDEX('@',email.Provider_Email,1) > 0 THEN UPPER(LEFT(email.Provider_Email,CHARINDEX('@',email.Provider_Email,1) - 1)) ELSE NULL END AS ComputingId
-        FROM [CDW_App_Dev].Rptg.TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider_20251118 email
+        FROM [CLARITY_App_Dev].Rptg.TEMP_tmb4f_TFS54501_Nuance_DAX_Study_Provider_20251118 email
         WHERE 1 = 1
      --         AND email.Provider_Email IS NOT NULL
 			  --AND email.Rollout_Wave_Assignment IN ('Wave 1','Wave 2','Wave 3','Wave 4','Wave 5')
@@ -95,7 +95,7 @@ FROM #prov_study
 ORDER BY
 	Provider_Email
 
-
+/*
 ;
 -- This CTE parses out the employee computing id from the email address in the EmployeeDim table
 -- It also parses out the employee's First Name and Last Name from EmployeeDim.Name.
@@ -153,6 +153,7 @@ FROM #ee_index
 --	EmployeeDurableKey
 ORDER BY
 	ComputingId
+*/
 /*
 ;
 

@@ -1,0 +1,165 @@
+USE DS_HSDM_APP
+
+DECLARE @startdate DATETIME, @enddate DATETIME
+
+SET @startdate = '10/26/2025 00:00:00'
+SET @enddate = '11/1/2025 23:59:59'
+
+IF OBJECT_ID('tempdb..#xtr ') IS NOT NULL
+DROP TABLE #xtr
+
+SELECT
+      -- [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
+      --,[event_type]
+       [event_count]
+      ,[event_date]
+      ,[event_id]
+      --,[event_category]
+      --,[epic_department_id]
+      --,[epic_department_name]
+      --,[epic_department_name_external]
+      --,[fmonth_num]
+      --,[fyear_num]
+      --,[fyear_name]
+      --,[peds]
+      --,[transplant]
+      --,[oncology]
+      --,[App_Flag]
+      --,[sk_Dim_Pt]
+      --,[sk_Fact_Pt_Acct]
+      --,[sk_Fact_Pt_Enc_Clrt]
+      --,[sk_dim_physcn]
+      --,[person_birth_date]
+      --,[person_gender]
+      ,[person_id]
+      --,[person_name]
+      --,[provider_id]
+      --,[provider_name]
+      --,[prov_typ]
+      --,[hs_area_id]
+      --,[hs_area_name]
+      --,[pod_id]
+      --,[pod_name]
+      --,[rev_location_id]
+      --,[rev_location]
+      --,[som_group_id]
+      --,[som_group_name]
+      --,[som_department_id]
+      --,[som_department_name]
+      --,[som_division_id]
+      --,[som_division_name]
+      --,[financial_division_id]
+      --,[financial_division_name]
+      --,[financial_sub_division_id]
+      --,[financial_sub_division_name]
+      --,[w_hs_area_id]
+      --,[w_hs_area_name]
+      --,[w_pod_id]
+      --,[w_pod_name]
+      --,[w_rev_location_id]
+      --,[w_rev_location]
+      --,[w_som_group_id]
+      --,[w_som_group_name]
+      --,[w_som_department_id]
+      --,[w_som_department_name]
+      --,[w_som_division_id]
+      --,[w_som_division_name]
+      --,[w_financial_division_id]
+      --,[w_financial_division_name]
+      --,[w_financial_sub_division_id]
+      --,[w_financial_sub_division_name]
+      ,[accepted]
+      ,[declined]
+      ,[consult]
+      ,[canceled]
+      --,[epic_department_external]
+      --,[Ethnicity]
+      --,[FirstRace]
+      --,[SecondRace]
+      --,[AgeAtRequest]
+      ,[PAT_ENC_CSN_ID]
+      ,[EntryTime]
+      --,[AcctNbrint]
+      --,[TierLevel]
+      --,[Isolation]
+      --,[referringProviderName]
+      --,[Referring_Facility]
+      --,[TransferReason]
+      --,[TransferMode]
+      --,[Diagnosis]
+      --,[ServiceNme]
+      --,[LevelOfCare]
+      ,[TransferTypeHx]
+      --,[PlacementStatusName]
+      --,[XTPlacementStatusName]
+      --,[XTPlacementStatusDateTime]
+      --,[ETA]
+      --,[PatientReferredTo]
+      --,[AdtPatientFacilityID]
+      --,[AdtPatientFacility]
+      --,[BedAssigned]
+      --,[BedType]
+      ,[DispositionReason]
+      ,[Transfer_Center_Request_Status]
+      ,[Accepting_Timestamp]
+      ,[Accepting_MD]
+      --,[AcceptingMD_ServiceLine]
+      --,[CloseTime]
+      --,[PatientType]
+      ,[ProtocolNme]
+      --,[ProviderApproved]
+      --,[PatientService]
+      --,[Financial Approval]
+      --,[Capacity Approval]
+      ,[Physician Acceptance]
+      ,[Canceled_By]
+      --,[Referred_From_UVA_HEALTH]
+      --,[Destination]
+      --,[Destination_UVA_HEALTH]
+      --,[FINANCIAL_CLASS]
+      --,[EntryTimehhmmss]
+      --,[Primary_Dx_on_Account]
+      --,[Prim_Dx]
+      --,[DRG]
+      --,[DRG_NAME]
+      ,[UVAMC_Admission_Instant]
+      ,[UVAMC_Discharge_Instant]
+      --,[Primary_DX_Block]
+      --,[organization_name]
+      --,[service_name]
+      --,[clinical_area_name]
+      --,[Load_Dtm]
+      --,[First_Incoming_DTTM]
+      --,[Last_Incoming_DTTM]
+      --,[First_Outgoing_DTTM]
+      --,[Last_Outgoing_DTTM]
+      ,[OpenTime]
+      ,[ResolutionTime]
+      --,[XTRequestOpenToResolution]
+      --,[XTRequestOpenToAcceptance]
+      --,[Disch_Disp_Name]
+      ,[TransferType]
+      ,[incoming_transfer]
+      ,[accepted_no_admission]
+  INTO #xtr
+  FROM [DS_HSDM_APP].[TabRptg].[Dash_PatientProgression_ExternalTransferStatus_Tiles]
+  WHERE 1 = 1
+  AND event_date >= @startdate
+  AND event_date <= @enddate
+
+  SELECT
+	*
+  FROM #xtr
+
+  SELECT
+	event_date,
+	SUM(accepted) AS accepted,
+	SUM(canceled) AS canceled,
+	SUM(consult) AS consult,
+	SUM(declined) AS declined,
+	SUM(event_count) AS event_count
+  FROM #xtr
+  GROUP BY
+	event_date
+  ORDER BY
+	event_date
