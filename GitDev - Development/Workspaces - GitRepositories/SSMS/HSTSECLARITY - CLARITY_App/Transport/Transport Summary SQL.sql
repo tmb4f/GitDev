@@ -1,0 +1,424 @@
+﻿USE CLARITY
+
+IF OBJECT_ID('tempdb..#HL_ASGN_INFO_AUDIT ') IS NOT NULL
+DROP TABLE #HL_ASGN_INFO_AUDIT
+
+IF OBJECT_ID('tempdb..#HL_REQ_STATUS_MOD_AUDIT ') IS NOT NULL
+DROP TABLE #HL_REQ_STATUS_MOD_AUDIT
+
+IF OBJECT_ID('tempdb..#transport ') IS NOT NULL
+DROP TABLE #transport
+
+--SELECT DISTINCT
+--	   haia.[HLR_ID]
+--  INTO #transport
+--  FROM [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+--  INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+--  ON haia.HLR_ID = hri.HLR_ID
+--  WHERE hri.REQ_TASK_SUBTYPE_C = 1 -- Transport, 2 = EVS, 3 = Other
+
+--SELECT DISTINCT
+--	   haia.[HLR_ID]
+--	  --,haia.LINE
+--	  --,haia.ASSIGNED_TECH_ID
+--  INTO #transport
+--  FROM [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+--  INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+--  ON haia.HLR_ID = hri.HLR_ID
+--  WHERE hri.REQ_TASK_SUBTYPE_C = 1 -- Transport, 2 = EVS, 3 = Other
+  
+  SELECT DISTINCT
+       haia.[HLR_ID]
+      --,[ASSIGNMENT_DATE_REAL]
+      ,haia.[LINE]
+      ,haia.[EVENT_LOCAL_DTTM]
+      --,haia.[EVENT_UTC_DTTM]
+      --,[EVENT_USER_ID]
+      --,[EVENT_TECH_ID]
+      --,[ENTRY_UTC_DTTM]
+      ,haia.[STATUS_C]
+	  ,zhrs.NAME AS STATUS_NAME
+      --,haia.[CANCEL_RSN_C]
+	  ,zhrcr.NAME AS CANCEL_RSN_NAME
+      ,[STATUS_IS_SKIP_YN]
+   --   ,[STATUS_SRC_C]
+	  --,zhass.NAME AS STATUS_SRC_NAME
+      ,[ASSIGNED_TECH_ID]
+      ,[GROUP_HLR_ID]
+   --   ,[VERIFICATION_METHOD_C]
+   --   ,[BARCODE_OVERRIDE_REASON_C]
+	  --,hri.HLR_NAME
+	  --,hri.HLR_TYPE_C
+	  --,zht.NAME AS HLR_TYPE_NAME
+	  --,hri.HL_FUNC_TYPE_C
+	  --,ztt3.NAME AS HL_FUNC_TYPE_NAME
+	  --,hri.REQ_HOSP_LOC_ID
+	  ,loc.LOC_NAME AS REQ_HOSP_LOC_NAME
+  INTO  #HL_ASGN_INFO_AUDIT
+  FROM [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+  --INNER JOIN #transport transport
+  --ON haia.HLR_ID = transport.HLR_ID
+  INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+  ON haia.HLR_ID = hri.HLR_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_CANCEL_RSN zhrcr
+  ON zhrcr.HL_REQ_CANCEL_RSN_C = haia.CANCEL_RSN_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS zhrs
+  ON zhrs.HL_REQ_STATUS_C = haia.STATUS_C
+  --LEFT OUTER JOIN CLARITY.dbo.ZC_HL_ASGN_STATUS_SRC zhass
+  --ON zhass.HL_ASGN_STATUS_SRC_C = haia.STATUS_SRC_C
+  --LEFT OUTER JOIN CLARITY.dbo.ZC_TASK_TYPE_3 ztt3
+  --ON ztt3.TASK_TYPE_3_C = hri.HL_FUNC_TYPE_C
+  --LEFT OUTER JOIN CLARITY.dbo.ZC_HLR_TYPE zht
+  --ON zht.HLR_TYPE_C = hri.HLR_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_LOC loc
+  ON loc.LOC_ID = hri.REQ_HOSP_LOC_ID
+  --WHERE hri.REQ_TASK_SUBTYPE_C = 1 -- Transport, 2 = EVS, 3 = Other
+  WHERE hri.HLR_NAME = 'Patient Transport'
+  AND haia.STATUS_IS_SKIP_YN <> 'Y'
+  --AND haia.HLR_ID = 706
+
+ -- SELECT
+ --   GROUP_HLR_ID,
+	--HLR_ID,
+ --   LINE,
+ --   EVENT_LOCAL_DTTM,
+ --   STATUS_NAME,
+ --   CANCEL_RSN_NAME,
+ --   STATUS_IS_SKIP_YN,
+ --   ASSIGNED_TECH_ID,
+ --   REQ_HOSP_LOC_NAME
+ -- FROM #HL_ASGN_INFO_AUDIT
+ -- ORDER BY
+	--GROUP_HLR_ID,
+	--HLR_ID,
+	--EVENT_LOCAL_DTTM
+
+  SELECT
+       haia.GROUP_HLR_ID
+      ,hrsma.[HLR_ID]
+      --,hrsma.[LINE]
+      --,hrsma.[CM_PHY_OWNER_ID]
+      --,hrsma.[CM_LOG_OWNER_ID]
+      --,[START_UTC_DTTM]
+      --,[END_UTC_DTTM]
+      ,[STATUS_LINE_NUM]
+      ,[STATUS_MODIFIER_C]
+	  ,zhrsm.NAME AS STATUS_MODIFIER_NAME
+      --,[HOLD_TYPE_C]
+	  ,zhht.NAME AS HOLD_TYPE_NAME
+      --,[HOLD_UNTIL_UTC_DTTM]
+      --,[POSTPONE_RSN_C]
+	  ,zhrpr.NAME AS POSTPONE_RSN_NAME
+      ,[START_LOCAL_DTTM]
+      ,[END_LOCAL_DTTM]
+      ,[HOLD_UNTIL_LOCAL_DTTM]
+	  ,haia.ASSIGNED_TECH_ID
+	  ,haia.REQ_HOSP_LOC_NAME
+  INTO  #HL_REQ_STATUS_MOD_AUDIT
+  FROM [CLARITY].[dbo].[HL_REQ_STATUS_MOD_AUDIT] hrsma
+  INNER JOIN
+  (
+  SELECT
+    haia.GROUP_HLR_ID,
+	haia.HLR_ID,
+    haia.LINE,
+    haia.ASSIGNED_TECH_ID,
+    haia.REQ_HOSP_LOC_NAME
+  FROM #HL_ASGN_INFO_AUDIT haia
+  ) haia
+  ON hrsma.HLR_ID = haia.HLR_ID
+  AND hrsma.STATUS_LINE_NUM = haia.LINE
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS_MOD zhrsm
+  ON zhrsm.HL_REQ_STATUS_MOD_C = hrsma.STATUS_MODIFIER_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_HOLD_TYPE zhht
+  ON zhht.HL_REQ_HOLD_TYPE_C = hrsma.HOLD_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_POSTPONE_RSN zhrpr
+  ON zhrpr.HL_REQ_POSTPONE_RSN_C = hrsma.POSTPONE_RSN_C
+
+ -- SELECT
+	--*
+ -- FROM #HL_REQ_STATUS_MOD_AUDIT
+ -- ORDER BY
+	--HLR_ID,
+	--START_LOCAL_DTTM
+
+/*
+SELECT
+	HLR_ID,
+    LINE,
+    ASSIGNED_TECH_ID,
+	ROW_NUMBER() OVER(PARTITION BY HLR_ID, LINE ORDER BY ASSIGNED_TECH_ID) AS seq
+FROM #transport
+ORDER BY HLR_ID, LINE, seq
+*/
+/*
+;
+WITH HL_ASGN_INFO_AUDIT AS
+(
+SELECT haia.[HLR_ID]
+      ,[ASSIGNMENT_DATE_REAL]
+      ,haia.[LINE]
+      ,haia.[EVENT_LOCAL_DTTM]
+      ,haia.[EVENT_UTC_DTTM]
+      ,[EVENT_USER_ID]
+      ,[EVENT_TECH_ID]
+      ,[ENTRY_UTC_DTTM]
+      ,haia.[STATUS_C]
+	  ,zhrs.NAME AS STATUS_NAME
+      ,haia.[CANCEL_RSN_C]
+      ,[STATUS_IS_SKIP_YN]
+      ,[STATUS_SRC_C]
+	  ,zhass.NAME AS STATUS_SRC_NAME
+      ,[ASSIGNED_TECH_ID]
+      ,[GROUP_HLR_ID]
+      ,[VERIFICATION_METHOD_C]
+      ,[BARCODE_OVERRIDE_REASON_C]
+	  ,hri.HLR_NAME
+	  ,hri.HLR_TYPE_C
+	  ,zht.NAME AS HLR_TYPE_NAME
+	  ,hri.HL_FUNC_TYPE_C
+	  ,ztt3.NAME AS HL_FUNC_TYPE_NAME
+	  ,hri.REQ_HOSP_LOC_ID
+	  ,loc.LOC_NAME AS REQ_HOSP_LOC_NAME
+  FROM [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+  INNER JOIN #transport transport
+  ON haia.HLR_ID = transport.HLR_ID
+  INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+  ON haia.HLR_ID = hri.HLR_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS zhrs
+  ON zhrs.HL_REQ_STATUS_C = haia.STATUS_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_ASGN_STATUS_SRC zhass
+  ON zhass.HL_ASGN_STATUS_SRC_C = haia.STATUS_SRC_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_TASK_TYPE_3 ztt3
+  ON ztt3.TASK_TYPE_3_C = hri.HL_FUNC_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HLR_TYPE zht
+  ON zht.HLR_TYPE_C = hri.HLR_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_LOC loc
+  ON loc.LOC_ID = hri.REQ_HOSP_LOC_ID
+  )
+  ,
+  HL_REQ_STATUS_MOD_AUDIT AS
+  (
+  SELECT hrsma.[HLR_ID]
+      ,hrsma.[LINE]
+      ,hrsma.[CM_PHY_OWNER_ID]
+      ,hrsma.[CM_LOG_OWNER_ID]
+      ,[START_UTC_DTTM]
+      ,[END_UTC_DTTM]
+      ,[STATUS_LINE_NUM]
+      ,[STATUS_MODIFIER_C]
+	  ,zhrsm.NAME AS STATUS_MODIFIER_NAME
+      ,[HOLD_TYPE_C]
+	  ,zhht.NAME AS HOLD_TYPE_NAME
+      ,[HOLD_UNTIL_UTC_DTTM]
+      ,[POSTPONE_RSN_C]
+	  ,zhrpr.NAME AS POSTPONE_RSN_NAME
+      ,[START_LOCAL_DTTM]
+      ,[END_LOCAL_DTTM]
+      ,[HOLD_UNTIL_LOCAL_DTTM]
+	  ,haia.ASSIGNED_TECH_ID
+	  ,loc.LOC_NAME AS REQ_HOSP_LOC_NAME
+  FROM [CLARITY].[dbo].[HL_REQ_STATUS_MOD_AUDIT] hrsma
+  INNER JOIN #transport transport
+  ON hrsma.HLR_ID = transport.HLR_ID
+  LEFT OUTER JOIN [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+  ON haia.LINE = hrsma.STATUS_LINE_NUM
+  INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+  ON haia.HLR_ID = hri.HLR_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS_MOD zhrsm
+  ON zhrsm.HL_REQ_STATUS_MOD_C = hrsma.STATUS_MODIFIER_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_HOLD_TYPE zhht
+  ON zhht.HL_REQ_HOLD_TYPE_C = hrsma.HOLD_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_POSTPONE_RSN zhrpr
+  ON zhrpr.HL_REQ_POSTPONE_RSN_C = hrsma.POSTPONE_RSN_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_LOC loc
+  ON loc.LOC_ID = hri.REQ_HOSP_LOC_ID
+)
+*/
+--SELECT
+--	*
+--FROM HL_ASGN_INFO_AUDIT haia
+--ORDER BY 
+--	haia.HLR_ID, EVENT_LOCAL_DTTM, LINE
+
+SELECT
+	hlr.GROUP_HLR_ID,
+    hlr.HLR_ID,
+    hlr.LINE,
+    hlr.EVENT_LOCAL_DTTM,
+    hlr.END_LOCAL_DTTM,
+	hlr.STATUS_C,
+    hlr.STATUS_NAME,
+    hlr.ASSIGNED_TECH_ID,
+    hlr.REQ_HOSP_LOC_NAME,
+    hlr.HOLD_TYPE_NAME
+INTO #transport
+FROM
+(
+SELECT
+    haia.GROUP_HLR_ID,
+	haia.HLR_ID,
+    haia.LINE,
+    haia.EVENT_LOCAL_DTTM,
+	NULL AS END_LOCAL_DTTM,
+	haia.STATUS_C,
+    haia.STATUS_NAME,
+    haia.ASSIGNED_TECH_ID,
+    haia.REQ_HOSP_LOC_NAME,
+	NULL AS HOLD_TYPE_NAME
+--FROM HL_ASGN_INFO_AUDIT haia
+FROM #HL_ASGN_INFO_AUDIT haia
+UNION ALL
+SELECT
+	hrsma.GROUP_HLR_ID,
+	hrsma.HLR_ID,
+    hrsma.STATUS_LINE_NUM AS LINE,
+    hrsma.START_LOCAL_DTTM AS EVENT_LOCAL_DTTM,
+	hrsma.END_LOCAL_DTTM,
+	hrsma.STATUS_MODIFIER_C AS STATUS_C,
+    hrsma.STATUS_MODIFIER_NAME AS STATUS_NAME,
+    hrsma.ASSIGNED_TECH_ID,
+    hrsma.REQ_HOSP_LOC_NAME,
+	hrsma.HOLD_TYPE_NAME
+--FROM HL_REQ_STATUS_MOD_AUDIT hrsma
+FROM #HL_REQ_STATUS_MOD_AUDIT hrsma
+) hlr
+
+SELECT
+	*
+FROM #transport
+ORDER BY 
+	--HLR_ID, LINE, EVENT_LOCAL_DTTM
+	--HLR_ID, EVENT_LOCAL_DTTM, LINE
+	GROUP_HLR_ID, HLR_ID, EVENT_LOCAL_DTTM, LINE
+/*
+  SELECT hrsma.[HLR_ID]
+      ,[START_LOCAL_DTTM]
+      ,[LINE]
+      ,[CM_PHY_OWNER_ID]
+      ,[CM_LOG_OWNER_ID]
+      ,[START_UTC_DTTM]
+      ,[END_UTC_DTTM]
+      ,[STATUS_LINE_NUM]
+      ,[STATUS_MODIFIER_C]
+	  ,zhrsm.NAME AS STATUS_MODIFIER_NAME
+      ,[HOLD_TYPE_C]
+	  ,zhht.NAME AS HOLD_TYPE_NAME
+      ,[HOLD_UNTIL_UTC_DTTM]
+      ,[POSTPONE_RSN_C]
+	  ,zhrpr.NAME AS POSTPONE_RSN_NAME
+      ,[END_LOCAL_DTTM]
+      ,[HOLD_UNTIL_LOCAL_DTTM]
+  FROM [CLARITY].[dbo].[HL_REQ_STATUS_MOD_AUDIT] hrsma
+  INNER JOIN #transport transport
+  ON hrsma.HLR_ID = transport.HLR_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS_MOD zhrsm
+  ON zhrsm.HL_REQ_STATUS_MOD_C = hrsma.STATUS_MODIFIER_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_HOLD_TYPE zhht
+  ON zhht.HL_REQ_HOLD_TYPE_C = hrsma.HOLD_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_POSTPONE_RSN zhrpr
+  ON zhrpr.HL_REQ_POSTPONE_RSN_C = hrsma.POSTPONE_RSN_C
+ORDER BY 
+	hrsma.HLR_ID, hrsma.START_LOCAL_DTTM, LINE
+*/
+/*
+SELECT haia.[HLR_ID]
+      ,[ASSIGNMENT_DATE_REAL]
+      ,haia.[LINE]
+      ,haia.[EVENT_LOCAL_DTTM]
+      ,haia.[EVENT_UTC_DTTM]
+      ,[EVENT_USER_ID]
+      ,[EVENT_TECH_ID]
+      ,[ENTRY_UTC_DTTM]
+      ,haia.[STATUS_C]
+	  ,zhrs.NAME AS STATUS_NAME
+      ,haia.[CANCEL_RSN_C]
+      ,[STATUS_IS_SKIP_YN]
+      ,[STATUS_SRC_C]
+	  ,zhass.NAME AS STATUS_SRC_NAME
+      ,[ASSIGNED_TECH_ID]
+      ,[GROUP_HLR_ID]
+      ,[VERIFICATION_METHOD_C]
+      ,[BARCODE_OVERRIDE_REASON_C]
+	  ,hri.HLR_NAME
+	  ,hri.HLR_TYPE_C
+	  ,zht.NAME AS HLR_TYPE_NAME
+	  ,hri.HL_FUNC_TYPE_C
+	  ,ztt3.NAME AS HL_FUNC_TYPE_NAME
+	  ,hri.REQ_HOSP_LOC_ID
+	  ,loc.LOC_NAME AS REQ_HOSP_LOC_ID
+	  --,hrsa.LINE AS hrsa_LINE
+	  --,hrsa.STATUS_C AS hrsa_STATUS_C
+	  --,hrsa.EVENT_LOCAL_DTTM AS hrsa_EVENT_LOCAL_DTTM
+	  --,hrsma.STATUS_LINE_NUM
+	  --,hrsma.LINE AS hrsma_LINE,
+   --    hrsma.START_UTC_DTTM,
+   --    hrsma.END_UTC_DTTM,
+   --    hrsma.STATUS_MODIFIER_C,
+   --    hrsma.HOLD_TYPE_C,
+   --    hrsma.HOLD_UNTIL_UTC_DTTM,
+   --    hrsma.POSTPONE_RSN_C,
+   --    hrsma.START_LOCAL_DTTM,
+   --    hrsma.END_LOCAL_DTTM,
+   --    hrsma.HOLD_UNTIL_LOCAL_DTTM
+  FROM [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+  INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+  ON haia.HLR_ID = hri.HLR_ID
+  --INNER JOIN CLARITY.dbo.HL_REQ_STATUS_AUDIT hrsa
+  --ON haia.HLR_ID = hrsa.HLR_ID
+  --LEFT OUTER JOIN CLARITY.dbo.HL_REQ_STATUS_MOD_AUDIT hrsma
+  --ON hrsma.HLR_ID = haia.HLR_ID
+  --AND hrsma.STATUS_LINE_NUM = haia.LINE
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS zhrs
+  ON zhrs.HL_REQ_STATUS_C = haia.STATUS_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_ASGN_STATUS_SRC zhass
+  ON zhass.HL_ASGN_STATUS_SRC_C = haia.STATUS_SRC_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_TASK_TYPE_3 ztt3
+  ON ztt3.TASK_TYPE_3_C = hri.HL_FUNC_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HLR_TYPE zht
+  ON zht.HLR_TYPE_C = hri.HLR_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_LOC loc
+  ON loc.LOC_ID = hri.REQ_HOSP_LOC_ID
+  /*
+  WHEN STATUS_C = 1
+                   THEN 'Dirty'   -  0-UNPLANNED
+                   WHEN STATUS_C = 2
+                   THEN 'Assigned' 10-ASSIGNED
+                   WHEN STATUS_C = 3
+                   THEN 'InProgress' 25-INPROGRESS
+                   WHEN STATUS_C = 4
+                   THEN 'OnHold'
+                   WHEN STATUS_C = 5
+                   THEN 'Completed' 35-COMPLETE
+				   5-Planned
+				   15-Acknowledged
+				   20-At Start Location
+				   30-At End Location
+				   40-Cancelled
+*/
+  --WHERE haia.STATUS_C IN (35,40) -- Completed, Canceled
+  --AND hri.HLR_NAME = 'Patient Transport'
+  --WHERE hri.HLR_NAME = 'Patient Transport'
+  WHERE hri.REQ_TASK_SUBTYPE_C = 1 -- Transport, 2 = EVS, 3 = Other
+  --ORDER BY haia.HLR_ID, LINE, EVENT_LOCAL_DTTM
+  ORDER BY haia.HLR_ID, EVENT_LOCAL_DTTM, LINE
+
+  /*
+  SELECT [HLR_ID]
+      ,[LINE]
+      ,[CM_PHY_OWNER_ID]
+      ,[CM_LOG_OWNER_ID]
+      ,[START_UTC_DTTM]
+      ,[END_UTC_DTTM]
+      ,[STATUS_LINE_NUM]
+      ,[STATUS_MODIFIER_C]
+      ,[HOLD_TYPE_C]
+      ,[HOLD_UNTIL_UTC_DTTM]
+      ,[POSTPONE_RSN_C]
+      ,[START_LOCAL_DTTM]
+      ,[END_LOCAL_DTTM]
+      ,[HOLD_UNTIL_LOCAL_DTTM]
+  FROM [CLARITY].[dbo].[HL_REQ_STATUS_MOD_AUDIT]
+  ORDER BY HLR_ID, LINE
+  */
+  */

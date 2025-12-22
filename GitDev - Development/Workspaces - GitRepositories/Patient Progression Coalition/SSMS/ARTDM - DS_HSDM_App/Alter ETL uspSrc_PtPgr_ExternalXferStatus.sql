@@ -10,9 +10,13 @@ GO
 --EXEC [ETL].[uspSrc_PtPgr_ExternalXferStatus]
 
 ALTER PROCEDURE [ETL].[uspSrc_PtPgr_ExternalXferStatus]
+    (
+     @startdate SMALLDATETIME = NULL
+    ,@enddate SMALLDATETIME = NULL
+    )
 AS 
 
---DECLARE @startdate DATETIME, @enddate DATETIME
+--DECLARE @startdate SMALLDATETIME, @enddate SMALLDATETIME
 
 --SET @startdate = '7/1/2023'
 --SET @enddate = '3/19/2024'
@@ -41,18 +45,33 @@ AS
 --		   11/10/2025 -TMB - edit logic setting request status flags; add flags to designate accepted and completed requests with no confirmed admission,
 --				and canceled requests with created admissions
 --		   11/21/2025 -TMB - edit logic for 'accepted' status; add flag for requests having a request status value 'Pending'
+--        12/03/2025 - TMB - add column sk_Adm_Dte; set default reporting period
 
 --************************************************************************************************************************
 
     SET NOCOUNT ON;
 
-DECLARE @startdate SMALLDATETIME,
-        @enddate SMALLDATETIME
-
-	----get default Balanced Scorecard date range
+	----get default range
+    --IF @startdate IS NULL
+    --    AND @enddate IS NULL
+    --    EXEC ETL.usp_Get_Dash_Dates_BalancedScorecard @startdate OUTPUT, @enddate OUTPUT;
     IF @startdate IS NULL
         AND @enddate IS NULL
-        EXEC ETL.usp_Get_Dash_Dates_BalancedScorecard @startdate OUTPUT, @enddate OUTPUT;
+		BEGIN
+			DECLARE @FYStartMonth INT = 7; -- July 1st fiscal year start
+			DECLARE @CurrentDate DATE = GETDATE();
+			DECLARE @CurrentFYStartDate DATE;
+
+			SET @enddate = @CurrentDate
+			SET @CurrentFYStartDate = 
+				CASE 
+					WHEN MONTH(@CurrentDate) >= @FYStartMonth THEN 
+						DATEFROMPARTS(YEAR(@CurrentDate), @FYStartMonth, 1)
+					ELSE 
+						DATEFROMPARTS(YEAR(@CurrentDate) - 1, @FYStartMonth, 1)
+				END;
+			SET @startdate = CAST(DATEADD(YEAR, -4, @CurrentFYStartDate) AS DATE);
+		END
  
 DECLARE @locstartdate SMALLDATETIME,
         @locenddate SMALLDATETIME
@@ -160,7 +179,8 @@ SELECT
 	CASE WHEN xt.Transfer_Center_Request_Status = 'Accepted' AND xt.incoming_transfer = 1 AND (xt.sk_Adm_Dte IS NULL AND xt.UVAMC_Admission_Instant IS NULL) THEN 1 ELSE 0 END AS request_accepted_no_admission,
 	CASE WHEN xt.Transfer_Center_Request_Status = 'Completed' AND xt.incoming_transfer = 1 AND (xt.sk_Adm_Dte IS NULL AND xt.UVAMC_Admission_Instant IS NULL) THEN 1 ELSE 0 END AS request_completed_no_admission,
 	CASE WHEN xt.accepted = 0 AND xt.consult = 0 AND xt.PAT_ENC_CSN_ID IS NOT NULL THEN 1 ELSE 0 END AS request_canceled_admission_created,
-	xt.pending -- INTEGER
+	xt.pending,
+	xt.sk_Adm_Dte -- INTEGER
 FROM
 (
 SELECT 

@@ -1,0 +1,1171 @@
+USE CLARITY
+
+DECLARE @startdate DATETIME = '7/1/2025';
+DECLARE @enddate DATETIME = '12/14/2025';
+
+--DECLARE @startdate datetime = '7/1/2024';
+--DECLARE @enddate datetime = '09/23/2025';
+
+IF OBJECT_ID('tempdb..#PLC ') IS NOT NULL
+DROP TABLE #PLC
+
+IF OBJECT_ID('tempdb..#PLC_PLUS ') IS NOT NULL
+DROP TABLE #PLC_PLUS
+
+IF OBJECT_ID('tempdb..#dl_tms_w_enc ') IS NOT NULL
+DROP TABLE #dl_tms_w_enc
+
+IF OBJECT_ID('tempdb..#dl_tms_wo_enc ') IS NOT NULL
+DROP TABLE #dl_tms_wo_enc
+
+IF OBJECT_ID('tempdb..#dl_tms ') IS NOT NULL
+DROP TABLE #dl_tms
+
+IF OBJECT_ID('tempdb..#plc_csns ') IS NOT NULL
+DROP TABLE #plc_csns
+
+IF OBJECT_ID('tempdb..#plc_leis ') IS NOT NULL
+DROP TABLE #plc_leis
+
+IF OBJECT_ID('tempdb..#PLC_AUDIT ') IS NOT NULL
+DROP TABLE #PLC_AUDIT
+
+IF OBJECT_ID('tempdb..#plc_audit_sts ') IS NOT NULL
+DROP TABLE #plc_audit_sts
+
+IF OBJECT_ID('tempdb..#PLC_WITH_AUDIT ') IS NOT NULL
+DROP TABLE #PLC_WITH_AUDIT
+
+IF OBJECT_ID('tempdb..#ADT ') IS NOT NULL
+DROP TABLE #ADT
+
+IF OBJECT_ID('tempdb..#PAT_ENC ') IS NOT NULL
+DROP TABLE #PAT_ENC
+
+IF OBJECT_ID('tempdb..#PAT_ENC_HSP ') IS NOT NULL
+DROP TABLE #PAT_ENC_HSP
+
+IF OBJECT_ID('tempdb..#ORD ') IS NOT NULL
+DROP TABLE #ORD
+
+IF OBJECT_ID('tempdb..#TX ') IS NOT NULL
+DROP TABLE #TX
+
+IF OBJECT_ID('tempdb..#HL_ASGN_INFO_AUDIT ') IS NOT NULL
+DROP TABLE #HL_ASGN_INFO_AUDIT
+
+IF OBJECT_ID('tempdb..#HL_REQ_STATUS_MOD_AUDIT ') IS NOT NULL
+DROP TABLE #HL_REQ_STATUS_MOD_AUDIT
+
+IF OBJECT_ID('tempdb..#transport ') IS NOT NULL
+DROP TABLE #transport
+
+IF OBJECT_ID('tempdb..#dltx ') IS NOT NULL
+DROP TABLE #dltx
+
+--IF OBJECT_ID('tempdb..#planned ') IS NOT NULL
+--DROP TABLE #planned
+
+IF OBJECT_ID('tempdb..#completed ') IS NOT NULL
+DROP TABLE #completed
+
+IF OBJECT_ID('tempdb..#completed_canceled ') IS NOT NULL
+DROP TABLE #completed_canceled
+
+IF OBJECT_ID('tempdb..#dltxp') IS NOT NULL
+DROP TABLE #dltxp
+
+IF OBJECT_ID('tempdb..#dlevt') IS NOT NULL
+DROP TABLE #dlevt
+
+IF OBJECT_ID('tempdb..#dlact') IS NOT NULL
+DROP TABLE #dlact
+
+IF OBJECT_ID('tempdb..#dlactwotxp') IS NOT NULL
+DROP TABLE #dlactwotxp
+
+IF OBJECT_ID('tempdb..#RptgTmp') IS NOT NULL
+DROP TABLE #RptgTmp
+
+/*
+CL_PLC: USER_ID is most likely the DS staff member who documented the intake
+CL_PLC_ADT_INFO
+CL_PLC_ORD_INFO
+CL_HKR: RECORD_ID  = ASSIGNED_TECH_ID, HL_USER_ID = EVENT_USER_ID
+CL_PLC_AUDIT: USER_EDIT_ID's of staff changing PLC status (ITM_CHANGED = 50) for a LOCATION_EVNT_ID.  See INST_OF_CHNG_TM.
+*/
+
+SELECT DISTINCT
+	   plc.[PAT_ID]
+	  ,pt.PAT_MRN_ID
+      ,plc.[PAT_ENC_CSN_ID] -- Inpatient Admission
+	  ,CASE WHEN plc.PAT_ENC_CSN_ID IS NULL THEN plc.PAT_ID ELSE CAST(plc.PAT_ENC_CSN_ID AS VARCHAR(18)) END AS ENC_SEQ_ID
+      ,plc.[START_TIME]
+	  --,ROW_NUMBER() OVER(PARTITION BY plc.PAT_ENC_CSN_ID ORDER BY plc.START_TIME) AS START_TIME_SEQ
+      ,plc.[CANCELED_TIME]
+      ,plc.[END_TIME]
+	  --,ROW_NUMBER() OVER(PARTITION BY plc.PAT_ENC_CSN_ID ORDER BY plc.END_TIME DESC) AS END_TIME_SEQ
+      ,plc.[LOCATION_EVNT_ID]
+      ,plc.[STATUS_C]
+	  ,zps.NAME AS STATUS_NAME
+      ,plc.[CASE_TRACK_EVENT_C]
+      ,plc.[PRE_CANCEL_STS_C]
+      ,plc.[PRIVATE_YN]
+      ,plc.[SOURCE_ORC_ID]
+      ,plc.[SOURCE_ORL_ID]
+      ,plc.[LOCATION_RECORD_ID]
+      ,plc.[USER_ID]
+	  --,emp.NAME AS USER_NAME
+	  --,LOWER(emp.SYSTEM_LOGIN) AS Computer_Login_Id
+	  --,wd.wd_Job_Posting_Title
+      ,plc.[COMMENTS]
+      ,plc.[RTLS_TAGID]
+      ,plc.[EVENT_TYPE_C]
+	  ,zpet.NAME AS EVENT_TYPE_NAME
+  INTO #PLC
+  FROM [CLARITY].[dbo].[CL_PLC] plc
+  LEFT OUTER JOIN CLARITY.dbo.PATIENT pt
+	ON pt.PAT_ID = plc.PAT_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_PLC_EVENT_TYPE zpet
+	ON zpet.PLC_EVENT_TYPE_C = plc.EVENT_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_PLC_STATUS zps
+	ON zps.STATUS_C = plc.STATUS_C
+ -- LEFT OUTER JOIN CLARITY_EMP emp
+	--ON emp.USER_ID = plc.USER_ID
+ -- LEFT OUTER JOIN
+ -- (
+ -- SELECT
+	--UVA_Computing_ID,
+	--wd_Job_Posting_Title
+ -- FROM CLARITY_App.Rptg.vwRef_Crosswalk_All_Workers
+ -- WHERE wd_Is_Primary_Job = 1 AND wd_IS_Position_Active = 1-- AND wd_Is_Active = 1
+ -- ) wd
+	--ON LOWER(wd.UVA_Computing_ID) = LOWER(emp.SYSTEM_LOGIN)
+  WHERE plc.LOCATION_RECORD_ID = 4204
+  AND CAST(plc.START_TIME AS DATE) BETWEEN @startdate AND @enddate
+
+ -- SELECT
+ --   *
+	----plc.PAT_ENC_CSN_ID,
+	----SUM(CASE WHEN plc.EVENT_TYPE_C = 0 THEN 1 ELSE 0 END) AS System_Event,
+	----SUM(CASE WHEN plc.EVENT_TYPE_C = 1 THEN 1 ELSE 0 END) AS Manually_Created
+ -- FROM #PLC plc
+ -- --WHERE plc.PAT_ENC_CSN_ID = 200112605326
+ -- --WHERE plc.PAT_ENC_CSN_ID = 200095806053
+ ---- GROUP BY
+	----plc.PAT_ENC_CSN_ID
+ -- ORDER BY plc.PAT_ENC_CSN_ID, plc.START_TIME, plc.LOCATION_EVNT_ID
+ -- --ORDER BY plc.PAT_ID, plc.PAT_ENC_CSN_ID, plc.START_TIME, plc.LOCATION_EVNT_ID
+ -- --ORDER BY plc.PAT_ENC_CSN_ID
+ -- --ORDER BY plc.PAT_ENC_CSN_ID, plc.START_TIME_SEQ, plc.END_TIME_SEQ
+ -- --ORDER BY plc.PAT_ID, plc.LOCATION_EVNT_ID, CASE WHEN plc.PAT_ENC_CSN_ID IS NULL THEN plc.PAT_ID ELSE CAST(plc.PAT_ENC_CSN_ID AS VARCHAR(18))  END, plc.START_TIME
+
+SELECT --DISTINCT
+       plc.PAT_ID,
+       plc.PAT_MRN_ID,
+       plc.PAT_ENC_CSN_ID,
+       plc.ENC_SEQ_ID,
+       plc.START_TIME,
+       plc.CANCELED_TIME,
+       plc.END_TIME,
+       plc.LOCATION_EVNT_ID,
+       plc.STATUS_C,
+       plc.STATUS_NAME,
+       plc.CASE_TRACK_EVENT_C,
+       plc.PRE_CANCEL_STS_C,
+       plc.PRIVATE_YN,
+       plc.SOURCE_ORC_ID,
+       plc.SOURCE_ORL_ID,
+       plc.LOCATION_RECORD_ID,
+       plc.USER_ID,
+       plc.COMMENTS,
+       plc.RTLS_TAGID,
+       plc.EVENT_TYPE_C,
+       plc.EVENT_TYPE_NAME
+	  ,ROW_NUMBER() OVER(PARTITION BY plc.ENC_SEQ_ID ORDER BY plc.START_TIME) AS START_TIME_SEQ
+	  ,ROW_NUMBER() OVER(PARTITION BY plc.ENC_SEQ_ID ORDER BY plc.END_TIME DESC) AS END_TIME_SEQ
+	  ,emp.NAME AS USER_NAME
+	  ,LOWER(emp.SYSTEM_LOGIN) AS Computer_Login_Id
+	  ,wd.wd_Job_Posting_Title
+  INTO #PLC_PLUS
+  FROM #PLC plc
+  LEFT OUTER JOIN CLARITY_EMP emp
+	ON emp.USER_ID = plc.USER_ID
+  LEFT OUTER JOIN
+  (
+  SELECT
+	UVA_Computing_ID,
+	wd_Job_Posting_Title
+  FROM CLARITY_App.Rptg.vwRef_Crosswalk_All_Workers
+  WHERE wd_Is_Primary_Job = 1 AND wd_IS_Position_Active = 1-- AND wd_Is_Active = 1
+  ) wd
+	ON LOWER(wd.UVA_Computing_ID) = LOWER(emp.SYSTEM_LOGIN)
+
+ -- SELECT
+ --   *
+ -- FROM #PLC_PLUS plc
+ -- --WHERE plc.PAT_ENC_CSN_ID = 200112605326
+ -- --WHERE plc.PAT_ENC_CSN_ID = 200095806053
+ ---- GROUP BY
+	----plc.PAT_ENC_CSN_ID
+ -- ORDER BY plc.PAT_ENC_CSN_ID, plc.START_TIME, plc.LOCATION_EVNT_ID
+ -- --ORDER BY plc.PAT_ID, plc.PAT_ENC_CSN_ID, plc.START_TIME, plc.LOCATION_EVNT_ID
+ -- --ORDER BY plc.PAT_ENC_CSN_ID
+ -- --ORDER BY plc.PAT_ENC_CSN_ID, plc.START_TIME_SEQ, plc.END_TIME_SEQ
+ -- --ORDER BY plc.PAT_ID, plc.LOCATION_EVNT_ID, plc.ENC_SEQ_ID, plc.START_TIME
+
+  SELECT
+    plc_start.PAT_ID,
+	plc_start.PAT_MRN_ID,
+	plc_start.PAT_ENC_CSN_ID,
+    plc_start.ENC_SEQ_ID,
+    plc_start.START_TIME,
+	plc_start.START_LOCATION_EVNT_ID,
+    plc_start.START_USER_ID,
+    plc_start.START_USER_NAME,
+    plc_start.START_Computer_Login_Id,
+    plc_start.START_wd_Job_Posting_Title,
+    plc_end.END_TIME,
+	plc_end.END_LOCATION_EVNT_ID,
+    plc_end.END_USER_ID,
+    plc_end.END_USER_NAME,
+    plc_end.END_Computer_Login_Id,
+    plc_end.END_wd_Job_Posting_Title
+  INTO #dl_tms_w_enc
+  FROM
+  (
+  SELECT
+    plc.PAT_ID,
+	plc.PAT_MRN_ID,
+	plc.PAT_ENC_CSN_ID,
+	plc.ENC_SEQ_ID,
+	plc.START_TIME,
+	plc.LOCATION_EVNT_ID AS START_LOCATION_EVNT_ID,
+	plc.USER_ID AS START_USER_ID,
+	plc.USER_NAME AS START_USER_NAME,
+	plc.Computer_Login_Id AS START_Computer_Login_Id,
+	plc.wd_Job_Posting_Title AS START_wd_Job_Posting_Title
+  FROM #PLC_PLUS plc
+  WHERE plc.PAT_ENC_CSN_ID IS NOT NULL
+  AND plc.START_TIME_SEQ = 1
+  ) plc_start
+  LEFT OUTER JOIN
+  (
+  SELECT
+    plc.PAT_ID,
+	plc.PAT_MRN_ID,
+	plc.PAT_ENC_CSN_ID,
+	plc.ENC_SEQ_ID,
+	plc.END_TIME,
+	plc.LOCATION_EVNT_ID AS END_LOCATION_EVNT_ID,
+	plc.USER_ID AS END_USER_ID,
+	plc.USER_NAME AS END_USER_NAME,
+	plc.Computer_Login_Id AS END_Computer_Login_Id,
+	plc.wd_Job_Posting_Title AS END_wd_Job_Posting_Title
+  FROM #PLC_PLUS plc
+  WHERE plc.PAT_ENC_CSN_ID IS NOT NULL
+  AND plc.END_TIME_SEQ = 1
+  ) plc_end
+  ON plc_end.PAT_ENC_CSN_ID = plc_start.PAT_ENC_CSN_ID
+  AND plc_end.ENC_SEQ_ID = plc_start.ENC_SEQ_ID
+
+ -- SELECT
+	--*
+ -- FROM #dl_tms_w_enc plc
+ -- ORDER BY
+	--plc.PAT_ENC_CSN_ID
+
+  SELECT
+    plc_start.PAT_ID,
+	plc_start.PAT_MRN_ID,
+	plc_start.PAT_ENC_CSN_ID,
+    plc_start.ENC_SEQ_ID,
+    plc_start.START_TIME,
+	plc_start.START_LOCATION_EVNT_ID,
+    plc_start.START_USER_ID,
+    plc_start.START_USER_NAME,
+    plc_start.START_Computer_Login_Id,
+    plc_start.START_wd_Job_Posting_Title,
+    plc_end.END_TIME,
+	plc_end.END_LOCATION_EVNT_ID,
+    plc_end.END_USER_ID,
+    plc_end.END_USER_NAME,
+    plc_end.END_Computer_Login_Id,
+    plc_end.END_wd_Job_Posting_Title
+  INTO #dl_tms_wo_enc
+  FROM
+  (
+  SELECT
+    plc.PAT_ID,
+	plc.PAT_MRN_ID,
+	plc.PAT_ENC_CSN_ID,
+	plc.ENC_SEQ_ID,
+	plc.START_TIME,
+	plc.LOCATION_EVNT_ID AS START_LOCATION_EVNT_ID,
+	plc.USER_ID AS START_USER_ID,
+	plc.USER_NAME AS START_USER_NAME,
+	plc.Computer_Login_Id AS START_Computer_Login_Id,
+	plc.wd_Job_Posting_Title AS START_wd_Job_Posting_Title
+  FROM #PLC_PLUS plc
+  WHERE plc.PAT_ENC_CSN_ID IS NULL
+  AND plc.START_TIME_SEQ = 1
+  ) plc_start
+  LEFT OUTER JOIN
+  (
+  SELECT
+    plc.PAT_ID,
+	plc.PAT_MRN_ID,
+	plc.PAT_ENC_CSN_ID,
+	plc.ENC_SEQ_ID,
+	plc.END_TIME,
+	plc.LOCATION_EVNT_ID AS END_LOCATION_EVNT_ID,
+	plc.USER_ID AS END_USER_ID,
+	plc.USER_NAME AS END_USER_NAME,
+	plc.Computer_Login_Id AS END_Computer_Login_Id,
+	plc.wd_Job_Posting_Title AS END_wd_Job_Posting_Title
+  FROM #PLC_PLUS plc
+  WHERE plc.PAT_ENC_CSN_ID IS NULL
+  AND plc.END_TIME_SEQ = 1
+  ) plc_end
+  --ON plc_end.PAT_ENC_CSN_ID = plc_start.PAT_ENC_CSN_ID
+  --AND plc_end.ENC_SEQ_ID = plc_start.ENC_SEQ_ID
+  ON plc_end.ENC_SEQ_ID = plc_start.ENC_SEQ_ID
+
+ -- SELECT
+	--*
+ -- FROM #dl_tms_wo_enc plc
+ -- ORDER BY
+	--plc.ENC_SEQ_ID
+
+   SELECT
+		dltms.*
+   INTO #dl_tms
+   FROM
+   (
+   SELECT
+	*
+   FROM #dl_tms_w_enc wenc
+   UNION ALL
+   SELECT
+	*
+   FROM #dl_tms_wo_enc woenc
+   ) dltms
+
+ -- SELECT
+	--*
+ -- FROM #dl_tms plc
+ -- ORDER BY
+	--plc.ENC_SEQ_ID
+/*
+  SELECT
+	plc.PAT_ENC_CSN_ID,
+	MIN(plc.START_TIME) AS START_TIME,
+	MAX(plc.END_TIME) AS END_TIME
+  INTO #dl_tms
+  FROM #PLC plc
+  WHERE plc.PAT_ENC_CSN_ID IS NOT NULL
+  GROUP BY
+	plc.PAT_ENC_CSN_ID
+  ORDER BY
+	plc.PAT_ENC_CSN_ID
+*/
+  SELECT DISTINCT
+	PAT_ENC_CSN_ID
+  INTO #plc_csns
+  FROM #dl_tms
+  WHERE PAT_ENC_CSN_ID IS NOT NULL
+/*
+  SELECT DISTINCT
+	LOCATION_EVNT_ID
+  INTO #plc_leis
+  FROM #dl_tms
+*/
+/*
+  SELECT
+	   plca.LOCATION_EVNT_ID
+	  ,plca.LINE
+      ,[USER_EDIT_ID]
+	  ,emp.NAME AS USER_EDIT_NAME
+      ,[INST_OF_CHNG_TM]
+      ,[OLD_VALUE]
+      ,[NEW_VALUE]
+      ,[OLD_STATUS_VALUE]
+      ,[NEW_STATUS_VALUE]
+	  ,zps.NAME AS NEW_STATUS_NAME
+	  ,ROW_NUMBER() OVER(PARTITION BY plca.LOCATION_EVNT_ID ORDER BY plca.LINE) AS chgseq
+  INTO #PLC_AUDIT
+  FROM [CLARITY].[dbo].[CL_PLC_AUDIT] plca
+  INNER JOIN #plc_leis leis
+	ON plca.LOCATION_EVNT_ID = leis.LOCATION_EVNT_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_PLC_STATUS zps
+	ON zps.STATUS_C = plca.NEW_STATUS_VALUE
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_EMP emp
+	ON emp.USER_ID = plca.USER_EDIT_ID
+  WHERE plca.ITM_CHANGED = 50 -- Status
+  AND plca.LOCATION_EVNT_ID IN (11148435,11148460)
+
+--SELECT
+--	*
+--FROM #PLC_AUDIT
+--ORDER BY LOCATION_EVNT_ID, LINE
+
+SELECT
+	seq1.LOCATION_EVNT_ID,
+    seq1.USER_EDIT_ID AS FIRST_STS_USER_EDIT_ID,
+    seq1.USER_EDIT_NAME AS FIRST_STS_USER_EDIT_NAME,
+    seq1.INST_OF_CHNG_TM AS FIRST_STS_INST,
+    seq1.NEW_STATUS_NAME AS FIRST_STS_NAME,
+    seq2.USER_EDIT_ID AS LAST_STS_USER_EDIT_ID,
+    seq2.USER_EDIT_NAME AS LAST_STS_USER_EDIT_NAME,
+    seq2.INST_OF_CHNG_TM AS LAST_STS_INST,
+    seq2.NEW_STATUS_NAME AS LAST_STS_NAME
+INTO #plc_audit_sts
+FROM
+(
+SELECT
+	LOCATION_EVNT_ID
+   ,USER_EDIT_ID
+   ,USER_EDIT_NAME
+   ,INST_OF_CHNG_TM
+   ,NEW_STATUS_NAME
+FROM #PLC_AUDIT
+WHERE chgseq = 1
+) seq1
+LEFT OUTER JOIN
+(
+SELECT
+	LOCATION_EVNT_ID
+   ,USER_EDIT_ID
+   ,USER_EDIT_NAME
+   ,INST_OF_CHNG_TM
+   ,NEW_STATUS_NAME
+FROM #PLC_AUDIT
+WHERE chgseq = 2
+) seq2
+ON seq2.LOCATION_EVNT_ID = seq1.LOCATION_EVNT_ID
+
+--SELECT
+--	*
+--FROM #plc_audit_sts
+--ORDER BY LOCATION_EVNT_ID, FIRST_STS_INST
+
+SELECT
+	plc.PAT_ID
+   ,plc.PAT_MRN_ID
+   ,plc.PAT_ENC_CSN_ID
+   ,plc.LOCATION_EVNT_ID
+   ,plc.START_TIME
+   ,plc.CANCELED_TIME
+   ,plc.END_TIME
+   ,plc.STATUS_NAME
+   ,plc.LOCATION_RECORD_ID
+   ,plc_audit.FIRST_STS_USER_EDIT_ID AS CONFIRMED_USER_ID,
+    plc_audit.FIRST_STS_USER_EDIT_NAME AS CONFIRMED_USER_NAME,
+    plc_audit.FIRST_STS_INST AS CONFIRMED_INST,
+    plc_audit.FIRST_STS_NAME AS CONFIRMED_STS_NAME,
+    plc_audit.LAST_STS_USER_EDIT_ID AS COMPLETED_USER_ID,
+    plc_audit.LAST_STS_USER_EDIT_NAME AS COMPLETED_USER_NAME,
+    plc_audit.LAST_STS_INST AS COMPLETED_INST,
+    plc_audit.LAST_STS_NAME AS COMPLETED_STS_NAME
+INTO #PLC_WITH_AUDIT
+FROM #PLC plc
+LEFT OUTER JOIN #plc_audit_sts plc_audit
+	ON plc_audit.LOCATION_EVNT_ID = plc.LOCATION_EVNT_ID
+
+SELECT
+	PAT_ID,
+    PAT_MRN_ID,
+    PAT_ENC_CSN_ID,
+    LOCATION_EVNT_ID,
+    START_TIME,
+    CANCELED_TIME,
+    END_TIME,
+    STATUS_NAME,
+    LOCATION_RECORD_ID,
+    CONFIRMED_USER_ID,
+    CONFIRMED_USER_NAME,
+    CONFIRMED_INST,
+    CONFIRMED_STS_NAME,
+    COMPLETED_USER_ID,
+    COMPLETED_USER_NAME,
+    COMPLETED_INST,
+    COMPLETED_STS_NAME
+FROM #PLC_WITH_AUDIT plc
+ORDER BY plc.PAT_ENC_CSN_ID, plc.LOCATION_EVNT_ID 
+*/
+SELECT
+	adt.PAT_ENC_CSN_ID
+   ,adt.EVENT_TYPE_NAME
+   ,adt.PAT_CLASS_NAME
+   ,adt.EFFECTIVE_TIME
+INTO #ADT
+FROM
+(
+SELECT
+	   adt.PAT_ENC_CSN_ID
+	  ,adt.SEQ_NUM_IN_ENC
+	  ,adt.EVENT_ID
+	  ,adt.EVENT_TYPE_C
+	  ,zet.NAME AS EVENT_TYPE_NAME  
+	  ,adt.PAT_CLASS_C
+	  ,zpc.NAME AS PAT_CLASS_NAME
+	  ,ROW_NUMBER() OVER(PARTITION BY adt.PAT_ENC_CSN_ID ORDER BY adt.SEQ_NUM_IN_ENC DESC) AS adtseq
+	  ,adt.EFFECTIVE_TIME
+  FROM CLARITY.dbo.CLARITY_ADT adt
+  INNER JOIN #plc_csns plc
+	ON adt.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_EVENT_TYPE zet
+	ON zet.EVENT_TYPE_C = adt.EVENT_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_PAT_CLASS zpc
+	ON zpc.ADT_PAT_CLASS_C = adt.PAT_CLASS_C
+) adt
+WHERE adt.adtseq = 1
+
+ -- SELECT
+	--*
+ -- FROM #ADT adt
+ -- ORDER BY adt.PAT_ENC_CSN_ID
+
+SELECT
+    enc.PAT_ENC_CSN_ID,
+    enc.ENC_TYPE_C,
+	zdet.NAME AS ENC_TYPE_NAME,
+    enc.VISIT_PROV_ID,
+	ser.PROV_NAME,
+    enc.DEPARTMENT_ID,
+	dep.DEPARTMENT_NAME,
+    enc.APPT_TIME,
+    enc.CHECKIN_TIME,
+    enc.CHECKOUT_TIME,
+    enc.HOSP_ADMSN_TIME,
+    enc.HOSP_DISCHRG_TIME,
+    enc.APPT_PRC_ID,
+	prc.PRC_NAME
+  INTO #PAT_ENC
+  FROM CLARITY.dbo.V_PAT_ENC enc
+  INNER JOIN #plc_csns plc
+	ON enc.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_DISP_ENC_TYPE zdet
+	ON zdet.DISP_ENC_TYPE_C = enc.ENC_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_SER ser
+	ON ser.PROV_ID = enc.VISIT_PROV_ID
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_DEP dep
+	ON dep.DEPARTMENT_ID = enc.DEPARTMENT_ID
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_PRC prc
+	ON prc.PRC_ID = enc.APPT_PRC_ID
+
+ -- SELECT
+	--*
+ -- FROM #PAT_ENC enc
+ -- ORDER BY enc.PAT_ENC_CSN_ID
+
+SELECT
+    enc.PAT_ENC_CSN_ID,
+    enc.LEVEL_OF_CARE_C,
+	zloc.NAME AS LEVEL_OF_CARE_NAME,
+    enc.HOSP_ADMSN_TIME,
+    enc.HOSP_DISCH_TIME,
+    enc.DISCHARGE_PROV_ID,
+	ser.PROV_NAME AS DISCHARGE_PROV_NAME,
+    enc.DEPARTMENT_ID,
+	dep.DEPARTMENT_NAME,
+    enc.DISCH_DEST_C,
+	zdd.NAME AS DISCH_DEST_NAME,
+    enc.ACUITY_LEVEL_C,
+	zal.NAME AS ACUITY_LEVEL_NAME
+  INTO #PAT_ENC_HSP
+  FROM CLARITY.dbo.V_PAT_ENC_HSP enc
+  INNER JOIN #plc_csns plc
+	ON enc.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_LVL_OF_CARE zloc
+   ON zloc.LEVEL_OF_CARE_C = enc.LEVEL_OF_CARE_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_SER ser
+	ON ser.PROV_ID = enc.DISCHARGE_PROV_ID
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_DEP dep
+	ON dep.DEPARTMENT_ID = enc.DEPARTMENT_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_DISCH_DEST zdd
+	ON zdd.DISCH_DEST_C = enc.DISCH_DEST_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_ACUITY_LEVEL zal
+	ON zal.ACUITY_LEVEL_C = enc.ACUITY_LEVEL_C
+
+ -- SELECT
+	--*
+ -- FROM #PAT_ENC_HSP enc
+ -- ORDER BY enc.PAT_ENC_CSN_ID
+
+SELECT
+	dschord.PAT_ENC_CSN_ID,
+    dschord.ORDERING_PROV_NAME,
+    dschord.ORDER_DTTM,
+    dschord.ORDER_STATUS_NAME,
+    dschord.ORDER_TYPE_C,
+    dschord.PAT_LOC_ID,
+    dschord.PAT_LOC_NAME
+INTO #ORD
+FROM
+(
+SELECT
+    ord.PAT_ENC_CSN_ID,
+	--ord.ORDER_ID,
+ --   ord.AUTH_PROV_ID,
+	--ser.PROV_NAME AS AUTH_PROV_NAME,
+ --   ord.ORDERING_PROV_ID,
+	ser.PROV_NAME AS ORDERING_PROV_NAME,
+    --ord.ORDERING_USER_ID,
+    --ord.CPOE_YN,
+    --ord.LGQ_ORDERSET_ID,
+    --ord.USER_OVERRIDE_YN,
+    --ord.REORDERED_YN,
+    --ord.MODIFIED_YN,
+    --ord.ORDER_MODE,
+    --ord.ORD_VRB_MSGSENT_YN,
+    --ord.ORD_COS_MSGSENT_YN,
+    --ord.DISCONTINUE_MODE,
+    --ord.DSC_VRB_MSGSENT_YN,
+    --ord.DSC_COS_MSGSENT_YN,
+    --ord.ORDER_SOURCE_C,
+    --ord.PRL_ORDERSET_ID,
+    --ord.FIRST_VERIFY_CDR,
+    --ord.FIRST_DISPENSE_CDR,
+    --ord.ORD_WORKSTATION_ID,
+    --ord.CM_PHY_OWNER_ID,
+    --ord.CM_LOG_OWNER_ID,
+    ord.ORDER_DTTM,
+    --ord.ACKNOWLEDGE_DTTM,
+    --ord.SESSION_KEY,
+    --ord.MU_CPOE_YN,
+    --ord.CSGN_TURNAROUND_SEC,
+    --ord.ORDER_DESC,
+    --ord.DISPLAY_NAME,
+    --ord.ORDER_STATUS_C,
+	zos.NAME AS ORDER_STATUS_NAME,
+    --ord.PAT_ID,
+    --ord.ACTIVE_ORDER_C,
+    ord.ORDER_TYPE_C,
+    --ord.ORIGINAL_SESSIONKEY,
+    ord.PAT_LOC_ID,
+	dep.DEPARTMENT_NAME AS PAT_LOC_NAME,
+    --ord.DEST_DEPT_OVRIDE_YN,
+    --ord.CANC_DEPT_OVRIDE_YN,
+    --ord.ORIG_AUTH_PROV_ID,
+    --ord.ORIG_ORD_PROV_ID--,
+    --ord.PREFERENCE_LIST_TYPE_C,
+    --ord.DISCON_LOC_DTTM,
+    --ord.SPECIMEN_RECV_DATE,
+    --ord.FIRST_FINAL_LOC_DTTM,
+    --ord.PARENT_CE_ORDER_ID
+	ROW_NUMBER() OVER(PARTITION BY ord.PAT_ENC_CSN_ID ORDER BY ord.ORDER_DTTM DESC) AS ordseq
+  --INTO #ORD
+  FROM CLARITY.dbo.ORDER_METRICS ord -- select latest discharge order for a CSN
+  INNER JOIN #plc_csns plc
+	ON ord.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_ORDER_TYPE zot
+	ON zot.ORDER_TYPE_C = ord.ORDER_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_SER ser
+	ON ser.PROV_ID = ord.AUTH_PROV_ID
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_SER ser2
+	ON ser2.PROV_ID = ord.ORDERING_PROV_ID
+  LEFT OUTER JOIN CLARITY.dbo.CLARITY_DEP dep
+	ON dep.DEPARTMENT_ID = ord.PAT_LOC_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_ORDER_STATUS zos
+	ON zos.ORDER_STATUS_C = ord.ORDER_STATUS_C
+  WHERE zot.NAME LIKE '%disch%' -- ORDER_TYPE_C = 49 Discharge
+  AND ord.ORDER_STATUS_C  = 5 -- Completed
+  ) dschord
+  WHERE dschord.ordseq = 1
+
+ -- SELECT
+	--*
+ -- FROM #ORD ord
+ -- ORDER BY ord.PAT_ENC_CSN_ID
+
+SELECT DISTINCT
+	   hri2.REQ_ADMISSION_PAT_ENC_CSN_ID -- same as PAT_ENC_CSN_ID
+	  ,hri2.REQ_END_APPT_PAT_ENC_CSN_ID
+      ,hri2.HLR_ID
+	  ,hri2.HLR_NAME
+	  ,hri2.HLR_TYPE_C
+	  ,hri2.HLR_TYPE_NAME
+	  ,hri2.RECORD_ID
+	  ,hri2.RECORD_NAME
+INTO #TX
+FROM
+(
+SELECT
+	hri.HLR_ID,
+    hri.HLR_NAME,
+    hri.HLR_TYPE_C,
+    hri.REQ_END_PLF_ID,
+    hri.REQ_ADMISSION_PAT_ENC_CSN_ID,
+	hri.REQ_END_APPT_PAT_ENC_CSN_ID,
+    hri.HLR_TYPE_NAME,
+    hri.RECORD_ID,
+    hri.RECORD_NAME
+FROM
+(
+SELECT DISTINCT
+	   hri.HLR_ID
+	  ,hri.HLR_NAME
+	  ,hri.HLR_TYPE_C
+	  ,hri.REQ_END_PLF_ID
+	  ,hri.REQ_ADMISSION_PAT_ENC_CSN_ID
+	  ,hri.REQ_END_APPT_PAT_ENC_CSN_ID
+	  ,zht.NAME AS HLR_TYPE_NAME
+	  ,cp.RECORD_ID
+	  ,cp.RECORD_NAME
+FROM CLARITY.dbo.HL_REQ_INFO hri
+INNER JOIN #plc_csns plc
+	ON hri.REQ_ADMISSION_PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+LEFT OUTER JOIN CLARITY.dbo.CL_PLF cp
+	ON hri.REQ_END_PLF_ID = cp.RECORD_ID
+LEFT OUTER JOIN CLARITY.dbo.ZC_HLR_TYPE zht
+	ON zht.HLR_TYPE_C = hri.HLR_TYPE_C
+WHERE 1 = 1
+AND hri.HLR_NAME = 'Patient Transport'
+AND zht.NAME = 'Job'
+AND cp.RECORD_NAME = 'DISCHARGE SUITE'
+) hri
+) hri2
+
+ -- SELECT
+	--*
+ -- FROM #TX tx
+ -- --WHERE tx.REQ_ADMISSION_PAT_ENC_CSN_ID = 200095806053
+ -- ORDER BY tx.REQ_ADMISSION_PAT_ENC_CSN_ID
+
+  -----------------------------------------------------------------------------------------------------------------------------
+
+  SELECT DISTINCT
+       haia.[HLR_ID]
+      ,haia.[LINE]
+      ,haia.[EVENT_LOCAL_DTTM]
+      ,haia.[STATUS_C]
+	  ,zhrs.NAME AS STATUS_NAME
+	  ,zhrcr.NAME AS CANCEL_RSN_NAME
+      ,[STATUS_IS_SKIP_YN]
+      ,haia.[ASSIGNED_TECH_ID]
+      ,[GROUP_HLR_ID]
+	  ,EVENT_USER_ID
+	  ,hri.REQ_HOSP_LOC_ID
+	  ,hri.REQ_TASK_SUBTYPE_C
+	  ,hri.REQ_TECHS_NUM
+	  ,hri.REQ_REGION_SEC_ID
+	  ,hri.REQ_ACTIVATION_LOCAL_DTTM
+	  ,hri.REQ_START_PLF_ID
+	  ,hri.REQ_END_PLF_ID
+	  ,hri.REQ_ADMISSION_PAT_ENC_CSN_ID
+	  ,hri.REQ_PEND_ID
+	  ,hri.REQ_PAT_ID
+	  ,hri.REQ_CREATE_DEPARTMENT_ID
+	  ,hri.REQ_BED_ID
+  INTO  #HL_ASGN_INFO_AUDIT
+  FROM [CLARITY].[dbo].[HL_ASGN_INFO_AUDIT] haia
+  --INNER JOIN CLARITY.dbo.HL_REQ_INFO hri
+  --ON haia.HLR_ID = hri.HLR_ID
+  LEFT OUTER JOIN CLARITY.dbo.HL_REQ_INFO hri
+  ON hri.HLR_ID = haia.HLR_ID
+INNER JOIN #plc_csns plc
+	ON hri.REQ_ADMISSION_PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_CANCEL_RSN zhrcr
+  ON zhrcr.HL_REQ_CANCEL_RSN_C = haia.CANCEL_RSN_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS zhrs
+  ON zhrs.HL_REQ_STATUS_C = haia.STATUS_C
+  WHERE
+  haia.STATUS_IS_SKIP_YN <> 'Y'
+  --AND CAST(haia.EVENT_LOCAL_DTTM AS DATE) BETWEEN @startdate AND @enddate
+  --AND CAST(hri.REQ_ACTIVATION_LOCAL_DTTM AS DATE) BETWEEN @startdate AND @enddate
+  AND hri.REQ_TASK_SUBTYPE_C IN ('1', '99') -- Patient Transport, Other
+  --AND hri.REQ_REGION_SEC_ID IN
+  --(3100000086, -- General - UVA GRAND CENTRAL UVA HOSPITAL TRANSPORT
+  -- 3100000108, -- General - UVA GRAND CENTRAL CULPEPER HOSPITAL TRANSPORT
+  -- 3100000113  -- General - UVA GRAND CENTRAL PRINCE WILLIAM MEDICAL CENTER TRANSPORT
+  -- )
+  --AND hri.REQ_ADMISSION_PAT_ENC_CSN_ID = 200095806053
+
+  SELECT
+       haia.GROUP_HLR_ID
+	  ,haia.EVENT_USER_ID
+      ,hrsma.[HLR_ID]
+      ,[STATUS_LINE_NUM]
+      ,[STATUS_MODIFIER_C]
+	  ,zhrsm.NAME AS STATUS_MODIFIER_NAME
+	  ,zhht.NAME AS HOLD_TYPE_NAME
+	  ,zhrpr.NAME AS POSTPONE_RSN_NAME
+      ,[START_LOCAL_DTTM]
+      ,[END_LOCAL_DTTM]
+      ,[HOLD_UNTIL_LOCAL_DTTM]
+	  ,haia.ASSIGNED_TECH_ID
+	  ,haia.REQ_HOSP_LOC_ID
+	  ,haia.REQ_TASK_SUBTYPE_C
+	  ,haia.REQ_ACTIVATION_LOCAL_DTTM
+	  ,haia.REQ_START_PLF_ID
+	  ,haia.REQ_END_PLF_ID
+	  ,haia.REQ_ADMISSION_PAT_ENC_CSN_ID
+	  ,haia.REQ_PEND_ID
+	  ,haia.REQ_PAT_ID
+	  ,haia.REQ_CREATE_DEPARTMENT_ID
+	  ,haia.REQ_BED_ID
+  INTO  #HL_REQ_STATUS_MOD_AUDIT
+  FROM [CLARITY].[dbo].[HL_REQ_STATUS_MOD_AUDIT] hrsma
+  INNER JOIN
+  (
+  SELECT
+    haia.GROUP_HLR_ID,
+	haia.EVENT_USER_ID,
+	haia.HLR_ID,
+    haia.LINE,
+    haia.ASSIGNED_TECH_ID,
+	haia.REQ_HOSP_LOC_ID,
+	haia.REQ_TASK_SUBTYPE_C,
+	haia.REQ_ACTIVATION_LOCAL_DTTM,
+	haia.REQ_START_PLF_ID,
+	haia.REQ_END_PLF_ID,
+	haia.REQ_ADMISSION_PAT_ENC_CSN_ID,
+	haia.REQ_PEND_ID,
+	haia.REQ_PAT_ID,
+	haia.REQ_CREATE_DEPARTMENT_ID,
+	haia.REQ_BED_ID
+  FROM #HL_ASGN_INFO_AUDIT haia
+  ) haia
+  ON hrsma.HLR_ID = haia.HLR_ID
+  AND hrsma.STATUS_LINE_NUM = haia.LINE
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_STATUS_MOD zhrsm
+  ON zhrsm.HL_REQ_STATUS_MOD_C = hrsma.STATUS_MODIFIER_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_HOLD_TYPE zhht
+  ON zhht.HL_REQ_HOLD_TYPE_C = hrsma.HOLD_TYPE_C
+  LEFT OUTER JOIN CLARITY.dbo.ZC_HL_REQ_POSTPONE_RSN zhrpr
+  ON zhrpr.HL_REQ_POSTPONE_RSN_C = hrsma.POSTPONE_RSN_C
+
+SELECT
+	hlr.GROUP_HLR_ID,
+	hlr.EVENT_USER_ID,
+    hlr.HLR_ID,
+    hlr.LINE,
+    hlr.EVENT_LOCAL_DTTM,
+    hlr.END_LOCAL_DTTM,
+	hlr.STATUS_C,
+    hlr.STATUS_NAME,
+    hlr.ASSIGNED_TECH_ID,
+	hlr.REQ_HOSP_LOC_ID,
+    hlr.HOLD_TYPE_NAME,
+	hlr.REQ_TASK_SUBTYPE_C,
+	hlr.REQ_ACTIVATION_LOCAL_DTTM,
+	hlr.REQ_START_PLF_ID,
+	hlr.REQ_END_PLF_ID,
+	hlr.REQ_ADMISSION_PAT_ENC_CSN_ID,
+	hlr.REQ_PEND_ID,
+	hlr.REQ_PAT_ID,
+	hlr.REQ_CREATE_DEPARTMENT_ID,
+	hlr.REQ_BED_ID
+INTO #transport
+FROM
+(
+SELECT
+    haia.GROUP_HLR_ID,
+	haia.EVENT_USER_ID,
+	haia.HLR_ID,
+    haia.LINE,
+    haia.EVENT_LOCAL_DTTM,
+	NULL AS END_LOCAL_DTTM,
+	haia.STATUS_C,
+    haia.STATUS_NAME,
+    haia.ASSIGNED_TECH_ID,
+	haia.REQ_HOSP_LOC_ID,
+	NULL AS HOLD_TYPE_NAME,
+	haia.REQ_TASK_SUBTYPE_C,
+	haia.REQ_ACTIVATION_LOCAL_DTTM,
+	haia.REQ_START_PLF_ID,
+	haia.REQ_END_PLF_ID,
+	haia.REQ_ADMISSION_PAT_ENC_CSN_ID,
+	haia.REQ_PEND_ID,
+	haia.REQ_PAT_ID,
+	haia.REQ_CREATE_DEPARTMENT_ID,
+	haia.REQ_BED_ID
+FROM #HL_ASGN_INFO_AUDIT haia
+UNION ALL
+SELECT
+	hrsma.GROUP_HLR_ID,
+	hrsma.EVENT_USER_ID,
+	hrsma.HLR_ID,
+    hrsma.STATUS_LINE_NUM AS LINE,
+    hrsma.START_LOCAL_DTTM AS EVENT_LOCAL_DTTM,
+	hrsma.END_LOCAL_DTTM,
+	hrsma.STATUS_MODIFIER_C AS STATUS_C,
+    hrsma.STATUS_MODIFIER_NAME AS STATUS_NAME,
+    hrsma.ASSIGNED_TECH_ID,
+	hrsma.REQ_HOSP_LOC_ID,
+	hrsma.HOLD_TYPE_NAME,
+	hrsma.REQ_TASK_SUBTYPE_C,
+	hrsma.REQ_ACTIVATION_LOCAL_DTTM,
+	hrsma.REQ_START_PLF_ID,
+	hrsma.REQ_END_PLF_ID,
+	hrsma.REQ_ADMISSION_PAT_ENC_CSN_ID,
+	hrsma.REQ_PEND_ID,
+	hrsma.REQ_PAT_ID,
+	hrsma.REQ_CREATE_DEPARTMENT_ID,
+	hrsma.REQ_BED_ID
+FROM #HL_REQ_STATUS_MOD_AUDIT hrsma
+) hlr
+--WHERE hlr.ASSIGNED_TECH_ID = 1646
+
+SELECT
+    tx.REQ_ADMISSION_PAT_ENC_CSN_ID,
+	tx.GROUP_HLR_ID,
+	tx.EVENT_USER_ID,
+	emp.NAME AS EVENT_USER_NAME,
+    tx.HLR_ID,
+    tx.LINE,
+    tx.EVENT_LOCAL_DTTM,
+    tx.END_LOCAL_DTTM,
+    tx.STATUS_C,
+    tx.STATUS_NAME,
+    tx.ASSIGNED_TECH_ID,
+    tx.REQ_HOSP_LOC_ID,
+    tx.HOLD_TYPE_NAME,
+    tx.REQ_TASK_SUBTYPE_C,
+    tx.REQ_ACTIVATION_LOCAL_DTTM,
+    tx.REQ_START_PLF_ID,
+    tx.REQ_END_PLF_ID,
+    tx.REQ_PEND_ID,
+    tx.REQ_PAT_ID,
+    tx.REQ_CREATE_DEPARTMENT_ID,
+    tx.REQ_BED_ID,
+	--cb.BED_LABEL AS REQ_BED_LABEL,
+	plf_from.RECORD_NAME AS plf_from_name,
+	plf_to.RECORD_NAME AS plf_to_name,
+	ROW_NUMBER() OVER(PARTITION BY tx.REQ_ADMISSION_PAT_ENC_CSN_ID ORDER BY LINE DESC) AS evtseq
+INTO #dltx
+FROM #transport tx
+LEFT OUTER JOIN CLARITY.dbo.CL_PLF plf_from
+	ON plf_from.RECORD_ID = tx.REQ_START_PLF_ID
+LEFT OUTER JOIN CLARITY.dbo.CL_PLF plf_to
+	ON plf_to.RECORD_ID = tx.REQ_END_PLF_ID
+LEFT OUTER JOIN CLARITY.dbo.CLARITY_EMP emp
+	ON emp.USER_ID = tx.EVENT_USER_ID
+--LEFT OUTER JOIN CLARITY.dbo.CLARITY_BED           AS cb
+--    ON cb.BED_ID = tx.REQ_BED_ID
+--where STATUS_C = 35
+--AND CAST(EVENT_LOCAL_DTTM AS DATE) = '3/31/2025'
+WHERE REQ_START_PLF_ID = 4204 OR REQ_END_PLF_ID = 4204
+--ORDER BY
+--	ASSIGNED_TECH_ID,
+--	GROUP_HLR_ID,
+--	HLR_ID,
+--	EVENT_LOCAL_DTTM
+--ORDER BY
+--	GROUP_HLR_ID,
+--	HLR_ID,
+--	LINE,
+--	EVENT_LOCAL_DTTM
+
+--SELECT
+--	*
+--FROM #dltx
+--ORDER BY
+--	REQ_ADMISSION_PAT_ENC_CSN_ID,
+--	EVENT_LOCAL_DTTM
+
+SELECT
+	REQ_ADMISSION_PAT_ENC_CSN_ID,
+    GROUP_HLR_ID,
+    EVENT_USER_ID,
+	EVENT_USER_NAME,
+    HLR_ID,
+    --LINE,
+    EVENT_LOCAL_DTTM,
+    END_LOCAL_DTTM,
+    STATUS_C,
+    STATUS_NAME,
+    ASSIGNED_TECH_ID,
+    REQ_HOSP_LOC_ID,
+    HOLD_TYPE_NAME,
+    REQ_TASK_SUBTYPE_C,
+    REQ_ACTIVATION_LOCAL_DTTM,
+    REQ_START_PLF_ID,
+    REQ_END_PLF_ID,
+    REQ_PEND_ID,
+    REQ_PAT_ID,
+    REQ_CREATE_DEPARTMENT_ID,
+    REQ_BED_ID,
+	--REQ_BED_LABEL,
+    plf_from_name,
+    plf_to_name--,
+    --evtseq
+INTO #dltxp
+FROM #dltx
+WHERE evtseq = 1
+
+--SELECT
+--	*
+--FROM #dltxp
+--ORDER BY
+--	REQ_ADMISSION_PAT_ENC_CSN_ID,
+--	EVENT_LOCAL_DTTM
+--ORDER BY
+--	HLR_ID,
+--	LINE,
+--	EVENT_LOCAL_DTTM
+--ORDER BY
+--    REQ_ADMISSION_PAT_ENC_CSN_ID,
+--	HLR_ID,
+--	LINE,
+--	EVENT_LOCAL_DTTM
+--ORDER BY
+--    REQ_ADMISSION_PAT_ENC_CSN_ID,
+--	HLR_ID
+
+  SELECT DISTINCT
+	plc.PAT_ID,
+    plc.PAT_MRN_ID,
+    plc.PAT_ENC_CSN_ID,
+    plc.START_LOCATION_EVNT_ID,
+	plc.END_LOCATION_EVNT_ID,
+    plc.START_TIME,
+    plc.END_TIME,
+	plc.START_USER_ID,
+	plc.START_USER_NAME,
+	plc.START_Computer_Login_Id,
+	plc.START_wd_Job_Posting_Title,
+	plc.END_USER_ID,
+	plc.END_USER_NAME,
+	plc.END_Computer_Login_Id,
+	plc.END_wd_Job_Posting_Title,
+	adt.PAT_CLASS_NAME,
+	enc.ENC_TYPE_NAME AS OPHOV_ENC_TYPE_NAME,
+	enc.VISIT_PROV_ID AS OPHOV_VISIT_PROV_ID,
+	enc.PROV_NAME AS OPHOV_VISIT_PROV_NAME,
+	enc.DEPARTMENT_ID AS OPHOV_DEPARTMENT_ID,
+	enc.DEPARTMENT_NAME AS OPHOV_DEPARTMENT_NAME,
+	enc.APPT_TIME AS OPHOV_APPT_TIME,
+	enc.CHECKIN_TIME AS OPHOV_CHECKIN_TIME,
+	enc.CHECKOUT_TIME AS OPHOV_CHECKOUT_TIME,
+	enc.PRC_NAME AS OPHOV_PRC_NAME,
+    enc_hsp.LEVEL_OF_CARE_NAME AS IP_LEVEL_OF_CARE_NAME,
+    enc_hsp.HOSP_ADMSN_TIME AS IP_HOSP_ADMSN_TIME,
+    enc_hsp.HOSP_DISCH_TIME AS IP_HOSP_DISCH_TIME,
+    enc_hsp.DISCHARGE_PROV_ID AS IP_DISCHARGE_PROV_ID,
+    enc_hsp.DISCHARGE_PROV_NAME AS IP_DISCHARGE_PROV_NAME,
+    enc_hsp.DEPARTMENT_ID AS IP_DEPARTMENT_ID,
+    enc_hsp.DEPARTMENT_NAME AS IP_DEPARTMENT_NAME,
+    enc_hsp.DISCH_DEST_NAME AS IP_DISCH_DEST_NAME,
+    enc_hsp.ACUITY_LEVEL_NAME AS IP_ACUITY_LEVEL_NAME,
+    ord.ORDERING_PROV_NAME,
+    ord.ORDER_DTTM,
+    ord.ORDER_STATUS_NAME,
+    ord.PAT_LOC_ID,
+    ord.PAT_LOC_NAME,
+	dltx.EVENT_LOCAL_DTTM,
+	dltx.EVENT_USER_NAME,
+    dltx.STATUS_NAME AS TX_STATUS_NAME,
+    dltx.REQ_ACTIVATION_LOCAL_DTTM,
+    --dltx.REQ_CREATE_DEPARTMENT_ID,
+    dltx.REQ_BED_ID,
+	--dltx.REQ_BED_LABEL,
+    dltx.plf_from_name,
+    dltx.plf_to_name
+  INTO #RptgTmp
+  FROM #dl_tms plc
+  LEFT OUTER JOIN #ADT adt
+	ON adt.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN #PAT_ENC enc
+	ON enc.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN #PAT_ENC_HSP enc_hsp
+	ON enc_hsp.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN #ORD ord
+	ON ord.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+  LEFT OUTER JOIN #dltxp dltx
+	ON dltx.REQ_ADMISSION_PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
+	--AND dltx.EVENT_USER_ID = plc.COMPLETED_USER_ID
+  --WHERE dltx.EVENT_LOCAL_DTTM IS NOT NULL
+
+ -- SELECT
+	--*
+ -- FROM #RptgTmp
+ -- ORDER BY
+	----LOCATION_EVNT_ID
+	--PAT_ENC_CSN_ID, START_LOCATION_EVNT_ID
+
+  SELECT
+	PAT_ID,
+    PAT_MRN_ID,
+    PAT_ENC_CSN_ID AS Source_Encounter,
+    PAT_CLASS_NAME AS Source_Patient_Class,
+    START_LOCATION_EVNT_ID AS PLC_Start_Event_Id,
+    END_LOCATION_EVNT_ID AS PLC_End_Event_Id,
+    START_USER_NAME AS PLC_Start_Event_User,
+    START_TIME AS PLC_Start_Event_Dttm,
+	START_Computer_Login_Id AS PLC_Start_Event_User_Login_Id,
+	START_wd_Job_Posting_Title AS PLC_Start_Event_User_Job_Title,
+    END_USER_NAME AS PLC_End_Event_User,
+    END_TIME AS PLC_End_Event_Dttm,
+	END_Computer_Login_Id AS PLC_End_Event_User_Login_Id,
+	END_wd_Job_Posting_Title AS PLC_End_Event_User_Job_Title,
+    CASE WHEN IP_DISCHARGE_PROV_NAME IS NOT NULL THEN IP_DISCHARGE_PROV_NAME ELSE OPHOV_VISIT_PROV_NAME END AS Source_Encounter_Provider,
+    CASE WHEN IP_DEPARTMENT_NAME IS NOT NULL THEN IP_DEPARTMENT_NAME ELSE OPHOV_DEPARTMENT_NAME END AS Source_Encounter_Department,
+	CASE WHEN IP_HOSP_DISCH_TIME IS NOT NULL THEN IP_HOSP_DISCH_TIME ELSE OPHOV_CHECKOUT_TIME END AS Source_Encounter_End_Dttm,
+    IP_LEVEL_OF_CARE_NAME AS Source_IP_Level_Of_Care,	
+    ORDERING_PROV_NAME AS Source_IP_Discharge_Order_Provider,
+    ORDER_DTTM AS Source_IP_Discharge_Order_Dttm,	
+    REQ_ACTIVATION_LOCAL_DTTM AS Transport_Request_Activation_Dttm,
+    EVENT_USER_NAME AS Transport_Request_Assigned_User,
+    EVENT_LOCAL_DTTM AS Transport_Request_Completed_Dttm,
+    plf_from_name AS Source_Bed_Label
+  FROM #RptgTmp
+  ORDER BY
+	--LOCATION_EVNT_ID
+	START_TIME, PAT_ENC_CSN_ID, START_LOCATION_EVNT_ID
+/*
+  SELECT
+	PAT_ID,
+    PAT_MRN_ID,
+    PAT_ENC_CSN_ID AS Source_Encounter,
+    PAT_CLASS_NAME AS Source_Patient_Class,
+    LOCATION_EVNT_ID AS PLC_Event_Id,
+    CONFIRMED_USER_NAME AS PLC_Event_Confirmed_User,
+    CONFIRMED_INST AS PLC_Event_Confirmed_Dttm,
+    COMPLETED_USER_NAME AS PLC_Event_Completed_User,
+    COMPLETED_INST AS PLC_Event_Completed_Dttm,
+    START_TIME AS PLC_Event_Start_Dttm,
+    END_TIME AS PLC_Event_End_Dttm,
+    PLC_STATUS_NAME AS PLC_Event_Status,
+    CASE WHEN IP_DISCHARGE_PROV_NAME IS NOT NULL THEN IP_DISCHARGE_PROV_NAME ELSE OPHOV_VISIT_PROV_NAME END AS Source_Encounter_Provider,
+    CASE WHEN IP_DEPARTMENT_NAME IS NOT NULL THEN IP_DEPARTMENT_NAME ELSE OPHOV_DEPARTMENT_NAME END AS Source_Encounter_Department,
+	CASE WHEN IP_HOSP_DISCH_TIME IS NOT NULL THEN IP_HOSP_DISCH_TIME ELSE OPHOV_CHECKOUT_TIME END AS Source_Encounter_End_Dttm,
+    IP_LEVEL_OF_CARE_NAME AS Source_IP_Level_Of_Care,	
+    ORDERING_PROV_NAME AS Source_IP_Discharge_Order_Provider,
+    ORDER_DTTM AS Source_IP_Discharge_Order_Dttm,	
+    REQ_ACTIVATION_LOCAL_DTTM AS Transport_Request_Activation_Dttm,
+    EVENT_USER_NAME AS Transport_Request_Assigned_User,
+    EVENT_LOCAL_DTTM AS Transport_Request_Completed_Dttm,
+    plf_from_name AS Source_Bed_Label--,
+    --CANCELED_TIME,
+    --LOCATION_RECORD_ID,
+    --CONFIRMED_USER_ID,
+    --CONFIRMED_STS_NAME,
+    --COMPLETED_USER_ID,
+    --COMPLETED_STS_NAME,
+    --MIN_START_TIME,
+    --MAX_END_TIME,
+    --OPHOV_ENC_TYPE_NAME,
+    --OPHOV_VISIT_PROV_ID,
+    --OPHOV_DEPARTMENT_ID,
+    --OPHOV_APPT_TIME,
+    --OPHOV_CHECKIN_TIME,
+    --OPHOV_PRC_NAME,
+    --IP_HOSP_ADMSN_TIME,
+    --IP_DISCHARGE_PROV_ID,
+    --IP_DEPARTMENT_ID,
+    --IP_DISCH_DEST_NAME,
+    --IP_ACUITY_LEVEL_NAME,
+    --ORDER_STATUS_NAME,
+    --PAT_LOC_ID,
+    --PAT_LOC_NAME,
+    --TX_STATUS_NAME,
+    --REQ_BED_ID,
+    --plf_to_name
+  FROM #RptgTmp
+  ORDER BY
+	--LOCATION_EVNT_ID
+	MIN_START_TIME, PAT_ENC_CSN_ID, LOCATION_EVNT_ID
+*/
+GO

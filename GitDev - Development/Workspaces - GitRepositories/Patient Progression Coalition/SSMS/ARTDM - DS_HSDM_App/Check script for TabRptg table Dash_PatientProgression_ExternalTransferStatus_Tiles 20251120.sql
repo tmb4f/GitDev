@@ -66,6 +66,7 @@ SELECT [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
       ,[declined]
       ,[consult]
       ,[canceled]
+	  ,pending
       ,[epic_department_external]
       ,[Ethnicity]
       ,[FirstRace]
@@ -141,7 +142,7 @@ SELECT [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
   INTO #xtr
   FROM [DS_HSDM_APP].[TabRptg].[Dash_PatientProgression_ExternalTransferStatus_Tiles]
   WHERE 1 = 1
-  AND incoming_transfer = 1
+  --AND incoming_transfer = 1
 
   SELECT	
     event_count,
@@ -151,6 +152,7 @@ SELECT [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
     declined,
     consult,
     canceled,
+	pending,
     DispositionReason,
     Transfer_Center_Request_Status,
     ProviderApproved,
@@ -281,12 +283,13 @@ SELECT [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
  --   Disch_Disp_Name,
   FROM #xtr
   WHERE 1 = 1
-  AND (ProviderApproved IS NULL OR ProviderApproved = 'N')
+  --AND (ProviderApproved IS NULL OR ProviderApproved = 'N')
   ORDER BY
 	accepted DESC,
 	canceled DESC,
 	declined DESC
 
+/*
   SELECT	
     ProviderApproved,
 	Approving_MD_Documented,
@@ -304,7 +307,8 @@ SELECT [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
   ORDER BY
 	ProviderApproved DESC,
 	Approving_MD_Documented DESC
-
+*/
+/*
   SELECT	
 	*
   FROM #xtr
@@ -319,4 +323,19 @@ SELECT [sk_Dash_PatientProgression_ExternalTransferStatus_Tiles]
   ORDER BY
 	ProviderApproved DESC,
 	Approving_MD_Documented DESC
-
+*/
+  SELECT	
+	SUM(event_count) AS External_Transfer_Requests,
+	SUM(incoming_transfer) AS Incoming_Transfer_Requests,
+	SUM(consult) AS Consult,
+	SUM(accepted) AS Admitted,
+	SUM(declined) AS Request_Status_Canceled_Flagged_As_Declined,
+	SUM(canceled) AS Request_Status_Canceled_Flagged_As_Canceled,
+	SUM(pending) AS Request_Status_Pending,
+	SUM(request_accepted_no_admission) AS Request_Status_Accepted_Not_Admitted,
+	SUM(request_completed_no_admission) AS Request_Status_Completed_Not_Admitted
+  FROM #xtr
+  WHERE 1 = 1
+ -- ORDER BY
+	--ProviderApproved DESC,
+	--Approving_MD_Documented DESC

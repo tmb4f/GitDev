@@ -10,15 +10,17 @@ GO
 --EXEC [ETL].[uspSrc_PtPgr_ExternalXferStatus]
 
 --ALTER PROCEDURE [ETL].[uspSrc_PtPgr_ExternalXferStatus]
+--    (
+--     @startdate SMALLDATETIME = NULL
+--    ,@enddate SMALLDATETIME = NULL
+	
+--    )
 --AS 
 
-DECLARE @startdate SMALLDATETIME,
-        @enddate SMALLDATETIME
+DECLARE @startdate DATETIME = NULL, @enddate DATETIME = NULL
 
---SET @startdate = '11/16/2025 00:00:00'
---SET @enddate = '11/16/2025 23:59:59' 
-SET @startdate = NULL
-SET @enddate = NULL 
+--SET @startdate = '7/1/2023'
+--SET @enddate = '3/19/2024'
 
 --/**********************************************************************************************************************
 --WHAT: Create procedure ETL.uspSrc_PtPgr_ExternalXferStatus
@@ -42,31 +44,46 @@ SET @enddate = NULL
 --		   10/02/2025 -TMB - edit logic identifying accepted requests; add flags to designate accepted requests with no confirmed admission and
 --				incoming transfers
 --		   11/10/2025 -TMB - edit logic setting request status flags; add flags to designate accepted and completed requests with no confirmed admission,
---				and canceled requests with created admission
+--				and canceled requests with created admissions
 --		   11/21/2025 -TMB - edit logic for 'accepted' status; add flag for requests having a request status value 'Pending'
+--        12/03/2025 - TMB - add column sk_Adm_Dte; set default reporting period
 
 --************************************************************************************************************************
 
     SET NOCOUNT ON;
 
-	----get default Balanced Scorecard date range
+	----get default date range	
     IF @startdate IS NULL
         AND @enddate IS NULL
-        EXEC ETL.usp_Get_Dash_Dates_BalancedScorecard @startdate OUTPUT, @enddate OUTPUT;
+		BEGIN
+			DECLARE @FYStartMonth INT = 7; -- July 1st fiscal year start
+			DECLARE @CurrentDate DATE = GETDATE();
+			DECLARE @CurrentFYStartDate DATE;
+
+			SET @enddate = @CurrentDate
+			SET @CurrentFYStartDate = 
+				CASE 
+					WHEN MONTH(@CurrentDate) >= @FYStartMonth THEN 
+						DATEFROMPARTS(YEAR(@CurrentDate), @FYStartMonth, 1)
+					ELSE 
+						DATEFROMPARTS(YEAR(@CurrentDate) - 1, @FYStartMonth, 1)
+				END;
+			SET @startdate = CAST(DATEADD(YEAR, -4, @CurrentFYStartDate) AS DATE);
+		END
  
 DECLARE @locstartdate SMALLDATETIME,
         @locenddate SMALLDATETIME
 		
 SET @locstartdate = @startdate
 SET @locenddate   = @enddate
-
-IF OBJECT_ID('tempdb..#xtr ') IS NOT NULL
-DROP TABLE #xtr
-
-IF OBJECT_ID('tempdb..#inctr ') IS NOT NULL
-DROP TABLE #inctr
  
 -------------------------------------------------------------------------------
+
+--IF OBJECT_ID('tempdb..#xtr ') IS NOT NULL
+--DROP TABLE #xtr
+
+--SELECT @locstartdate, @locenddate
+
 SELECT
 	xt.event_type,
     xt.event_category,
@@ -75,7 +92,6 @@ SELECT
     xt.declined,
     xt.consult,
     xt.canceled,
-	xt.pending,
     xt.event_date,
     xt.fmonth_num,
     xt.Fyear_num,
@@ -141,7 +157,6 @@ SELECT
     xt.Prim_Dx,
     xt.DRG,
     xt.DRG_NAME,
-	xt.sk_Adm_Dte,
     xt.UVAMC_Admission_Instant,
     xt.UVAMC_Discharge_Instant,
     xt.Primary_DX_Block,
@@ -167,15 +182,16 @@ SELECT
 	xt.incoming_transfer,
 	CASE WHEN xt.Transfer_Center_Request_Status = 'Accepted' AND xt.incoming_transfer = 1 AND (xt.sk_Adm_Dte IS NULL AND xt.UVAMC_Admission_Instant IS NULL) THEN 1 ELSE 0 END AS request_accepted_no_admission,
 	CASE WHEN xt.Transfer_Center_Request_Status = 'Completed' AND xt.incoming_transfer = 1 AND (xt.sk_Adm_Dte IS NULL AND xt.UVAMC_Admission_Instant IS NULL) THEN 1 ELSE 0 END AS request_completed_no_admission,
-	CASE WHEN xt.accepted = 0 AND xt.consult = 0 AND xt.PAT_ENC_CSN_ID IS NOT NULL THEN 1 ELSE 0 END AS request_canceled_admission_created
-INTO #xtr
+	CASE WHEN xt.accepted = 0 AND xt.consult = 0 AND xt.PAT_ENC_CSN_ID IS NOT NULL THEN 1 ELSE 0 END AS request_canceled_admission_created,
+	xt.pending,
+	xt.sk_Adm_Dte -- INTEGER
+--INTO #xtr
 FROM
 (
 SELECT 
 	  CAST('External Transfer Request' AS VARCHAR(50))	AS event_type
 	, CAST('Intake Request Status' AS VARCHAR(150))	AS event_category
 	, CASE WHEN xt.TransferTypeHx IN ('Incoming Transfer','Consult','Medical Intrafacility Transfer') THEN 1 ELSE 0 END AS event_count
-	--, CASE WHEN xt.TransferTypeHx NOT IN ('Consult','Outgoing Transfer') AND xt.Disposition IN ('Accepted','Completed') AND (adt.sk_Adm_Dte IS NOT NULL AND xt.UVAMC_Admission_Instant IS NOT NULL) THEN 1 ELSE 0 END AS accepted
 	, CASE WHEN xt.TransferTypeHx NOT IN ('Consult','Outgoing Transfer') AND xt.Disposition IN ('Accepted','Completed') AND (adt.sk_Adm_Dte IS NOT NULL OR xt.UVAMC_Admission_Instant IS NOT NULL) THEN 1 ELSE 0 END AS accepted
 	, CASE WHEN xt.TransferTypeHx NOT IN ('Consult','Outgoing Transfer')
 		AND xt.Disposition NOT IN ('Accepted','Completed')
@@ -338,8 +354,8 @@ SELECT
 	AND CAST(EntryTime AS DATE) <=  @locenddate
 ) xt
 
-	--ORDER BY xt.EntryTime
-
+	ORDER BY xt.EntryTime
+/*
 	SELECT
 		event_type,
         event_category,
@@ -447,10 +463,10 @@ SELECT
   WHERE 1 = 1
   AND incoming_transfer = 1
 
-  SELECT
-	*
-  FROM #inctr
-  WHERE pending = 1
+ -- SELECT
+	--*
+ -- FROM #inctr
+ -- WHERE pending = 1
 
   SELECT	
     ProviderApproved,
@@ -471,22 +487,21 @@ SELECT
 	ProviderApproved DESC,
 	Approving_MD_Documented DESC
 
-  SELECT	
-	*
-  FROM #inctr
-  WHERE 1 = 1
-  AND ProviderApproved IS NULL
-  AND Approving_MD_Documented = 'N'
-  AND accepted = 0
-  AND declined = 0
-  AND canceled = 0
-  AND request_accepted_no_admission = 0
-  AND request_completed_no_admission = 0
-  ORDER BY
-	ProviderApproved DESC,
-	Approving_MD_Documented DESC
+ -- SELECT	
+	--*
+ -- FROM #inctr
+ -- WHERE 1 = 1
+ -- AND ProviderApproved IS NULL
+ -- AND Approving_MD_Documented = 'N'
+ -- AND accepted = 0
+ -- AND declined = 0
+ -- AND canceled = 0
+ -- AND request_accepted_no_admission = 0
+ -- AND request_completed_no_admission = 0
+ -- ORDER BY
+	--ProviderApproved DESC,
+	--Approving_MD_Documented DESC
 
-/*
 	SELECT
 		xt.event_type,
         xt.event_category,
@@ -583,10 +598,11 @@ SELECT
         xt.Disch_Disp_Name,
         xt.TransferType,
         xt.incoming_transfer,
-		--xt.accepted_no_admission,
-		xt.request_accepted_no_admission,
-		xt.request_completed_no_admission,
-        xt.request_canceled_admission_created
+        xt.request_accepted_no_admission,
+        xt.request_completed_no_admission,
+        xt.request_canceled_admission_created,
+        xt.pending,
+        xt.sk_Adm_Dte
 	FROM #xtr xt
 	--ORDER BY xt.EntryTime
 	--ORDER BY xt.TransferTypeHx, xt.Transfer_Center_Request_Status, xt.PAT_ENC_CSN_ID DESC, accepted DESC, xt.EntryTime
@@ -598,6 +614,7 @@ SELECT
         SUM(xt.declined) AS declined,
         SUM(xt.consult) AS consult,
         SUM(xt.canceled) AS canceled,
+		SUM(xt.pending) AS pending,
         SUM(xt.incoming_transfer) AS incoming_transfer,
 		SUM(xt.request_accepted_no_admission) AS request_accepted_no_admission,
 		SUM(xt.request_completed_no_admission) AS request_completed_no_admission,
@@ -640,6 +657,7 @@ ORDER BY
 	Fyear_num,
 	fmonth_num
 */
+	
 GO
 
 
