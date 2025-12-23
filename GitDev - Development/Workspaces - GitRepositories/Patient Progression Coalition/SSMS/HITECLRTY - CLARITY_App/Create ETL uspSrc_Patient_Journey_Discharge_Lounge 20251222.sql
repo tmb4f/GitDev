@@ -45,44 +45,8 @@ DECLARE @locstartdate SMALLDATETIME,
 SET @locstartdate = @startdate
 SET @locenddate   = @enddate
 
-DECLARE @Latest_Dropoff_Time TABLE
-(
-[Day_of_Week_Num] INTEGER,
-[Latest_Dropoff_Time] TIME
-)
-
-INSERT INTO @Latest_Dropoff_Time
-(
-    Day_of_Week_Num,
-    Latest_Dropoff_Time
-)
-VALUES
-(   1, -- Day_of_Week_Num - integer -- Sunday
-    '15:00'  -- Latest_Dropoff_Time - time
-    )
-,(   2, -- Day_of_Week_Num - integer
-    '18:00'  -- Latest_Dropoff_Time - time
-    )
-,(   3, -- Day_of_Week_Num - integer
-    '18:00'  -- Latest_Dropoff_Time - time
-    )
-,(   4, -- Day_of_Week_Num - integer
-    '18:00'  -- Latest_Dropoff_Time - time
-    )
-,(   5, -- Day_of_Week_Num - integer
-    '18:00'  -- Latest_Dropoff_Time - time
-    )
-,(   6, -- Day_of_Week_Num - integer
-    '18:00'  -- Latest_Dropoff_Time - time
-    )
-,(   7, -- Day_of_Week_Num - integer
-    '18:00'  -- Latest_Dropoff_Time - time
-    )
-;
-
--- After 0900
-DECLARE @Earliest_Dropoff_Time TIME;
-SET @Earliest_Dropoff_Time = '09:00';
+DECLARE @Latest_Dropoff_Time TIME;
+SET @Latest_Dropoff_Time = '18:00';
 
 IF OBJECT_ID('tempdb..#PLC ') IS NOT NULL
 DROP TABLE #PLC
@@ -851,10 +815,6 @@ ORDER BY REQ_ADMISSION_PAT_ENC_CSN_ID
 	ON ord.PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
   LEFT OUTER JOIN #dltxp dltx
 	ON dltx.REQ_ADMISSION_PAT_ENC_CSN_ID = plc.PAT_ENC_CSN_ID
-ORDER BY CAST(plc.START_TIME AS DATE), plc.PAT_ENC_CSN_ID, plc.START_LOCATION_EVNT_ID, plc.END_LOCATION_EVNT_ID
-
-  -- Create index for temp table #RptgTmp
-  CREATE UNIQUE CLUSTERED INDEX IX_RptgTmp ON #RptgTmp(PLC_Start_Date, PAT_ENC_CSN_ID, START_LOCATION_EVNT_ID, END_LOCATION_EVNT_ID)
 
   --SELECT
   --  *
@@ -873,17 +833,12 @@ ORDER BY CAST(plc.START_TIME AS DATE), plc.PAT_ENC_CSN_ID, plc.START_LOCATION_EV
     PLC_Actual_Duration_Minutes,
     START_TM,
 	END_TM,
-	ldt.Latest_Dropoff_Time,
-    CASE WHEN dlrptg.START_TM > ldt.Latest_Dropoff_Time THEN 1 ELSE 0 END AS PLC_Start_Time_After_Latest_Dropoff_Time,
-    CASE WHEN (dlrptg.PLC_End_Date = dlrptg.PLC_Start_Date AND dlrptg.END_TM > ldt.Latest_Dropoff_Time) OR
+    CASE WHEN dlrptg.START_TM > @Latest_Dropoff_Time THEN 1 ELSE 0 END AS PLC_Start_Time_After_Latest_Dropoff_Time,
+    CASE WHEN (dlrptg.PLC_End_Date = dlrptg.PLC_Start_Date AND dlrptg.END_TM > @Latest_Dropoff_Time) OR
 							dlrptg.PLC_End_Date > dlrptg.PLC_Start_Date
-					THEN CAST(DATEADD(DAY, DATEDIFF(DAY, 0, dlrptg.PLC_Start_Date), CAST(ldt.Latest_Dropoff_Time AS DATETIME)) AS DATETIME2(3))
+					THEN CAST(DATEADD(DAY, DATEDIFF(DAY, 0, dlrptg.PLC_Start_Date), CAST(@Latest_Dropoff_Time AS DATETIME)) AS DATETIME2(3))
 					ELSE dlrptg.END_TIME
 	 END AS ADJUSTED_END_TIME,
-    CASE WHEN dlrptg.START_TM < @Earliest_Dropoff_Time
-					THEN CAST(DATEADD(DAY, DATEDIFF(DAY, 0, dlrptg.PLC_Start_Date), CAST(@Earliest_Dropoff_Time AS DATETIME)) AS DATETIME2(3))
-					ELSE dlrptg.START_TIME
-	 END AS ADJUSTED_START_TIME,
     START_USER_ID,
     START_USER_NAME,
     START_Computer_Login_Id,
@@ -929,10 +884,6 @@ ORDER BY CAST(plc.START_TIME AS DATE), plc.PAT_ENC_CSN_ID, plc.START_LOCATION_EV
     plf_to_name
   INTO #RptgTmp2
   FROM #RptgTmp dlrptg
-  LEFT OUTER JOIN CLARITY_App.Rptg.vwDim_Date ddte
-	ON ddte.day_date = CAST(dlrptg.PLC_Start_Date AS SMALLDATETIME)
-  LEFT OUTER JOIN @Latest_Dropoff_Time ldt
-	ON ldt.Day_of_Week_Num = ddte.day_of_week_num
 
   --SELECT
   --  *
@@ -951,12 +902,10 @@ ORDER BY CAST(plc.START_TIME AS DATE), plc.PAT_ENC_CSN_ID, plc.START_LOCATION_EV
     dlrptg.PLC_Actual_Duration_Minutes,
     dlrptg.START_TM,
     dlrptg.END_TM,
-    dlrptg.Latest_Dropoff_Time,
     dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time,
     dlrptg.ADJUSTED_END_TIME,
-    dlrptg.ADJUSTED_START_TIME,
-    CASE WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0 AND COALESCE(dlrptg.PLC_Actual_Duration_Minutes,0) < 15 THEN 1 ELSE 0 END AS PLC_Actual_Duration_Minutes_Less_Than_15,
-    CASE WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0 THEN DATEDIFF(minute, dlrptg.ADJUSTED_START_TIME, dlrptg.ADJUSTED_END_TIME) ELSE 0 END AS PLC_Adjusted_Duration_Minutes,
+    CASE WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0 AND COALESCE(dlrptg.PLC_Actual_Duration_Minutes,0) < 5 THEN 1 ELSE 0 END AS PLC_Actual_Duration_Minutes_Less_Than_5,
+    CASE WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0 THEN DATEDIFF(minute, dlrptg.START_TIME, dlrptg.ADJUSTED_END_TIME) ELSE 0 END AS PLC_Adjusted_Duration_Minutes,
     dlrptg.START_USER_ID,
     dlrptg.START_USER_NAME,
     dlrptg.START_Computer_Login_Id,
@@ -1021,11 +970,10 @@ ORDER BY CAST(plc.START_TIME AS DATE), plc.PAT_ENC_CSN_ID, plc.START_LOCATION_EV
     dlrptg.START_TM,
     dlrptg.END_TM,
     dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time,
-    dlrptg.ADJUSTED_START_TIME,
     dlrptg.ADJUSTED_END_TIME,
-    dlrptg.PLC_Actual_Duration_Minutes_Less_Than_15,
+    dlrptg.PLC_Actual_Duration_Minutes_Less_Than_5,
     dlrptg.PLC_Adjusted_Duration_Minutes,
-    CASE WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0 AND COALESCE(dlrptg.PLC_Adjusted_Duration_Minutes,0) < 15 THEN 1 ELSE 0 END AS PLC_Adjusted_Duration_Minutes_Less_Than_15,
+    CASE WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0 AND COALESCE(dlrptg.PLC_Adjusted_Duration_Minutes,0) < 5 THEN 1 ELSE 0 END AS PLC_Adjusted_Duration_Minutes_Less_Than_5,
     dlrptg.START_USER_ID,
     dlrptg.START_USER_NAME,
     dlrptg.START_Computer_Login_Id,
@@ -1071,10 +1019,6 @@ ORDER BY CAST(plc.START_TIME AS DATE), plc.PAT_ENC_CSN_ID, plc.START_LOCATION_EV
     dlrptg.plf_to_name
   INTO #RptgTmp4
   FROM #RptgTmp3 dlrptg
-ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVNT_ID, dlrptg.END_LOCATION_EVNT_ID
-
-  -- Create index for temp table #RptgTmp4
-  CREATE UNIQUE CLUSTERED INDEX IX_RptgTmp4 ON #RptgTmp4(PLC_Start_Date, PAT_ENC_CSN_ID, START_LOCATION_EVNT_ID, END_LOCATION_EVNT_ID)
 
   --SELECT
   --  *
@@ -1207,14 +1151,13 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
   SELECT
     dlrptg.PAT_CLASS_NAME AS Discharge_Patient_Class,
 	--1 AS event_count,
-	CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after Latest_Dropoff_Time or the event duration is less than 15 minutes 
+	CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after 18:00 or the event duration is less than 5 minutes 
 		WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0
-			AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_15 = 0
+			AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_5 = 0
 			THEN 1
 		ELSE 0 END AS event_count,
 	'Discharge Lounge' AS 'event_category',	
-	--CAST(dlrptg.START_TIME AS DATE)  AS event_date,
-	dlrptg.PLC_Start_Date  AS event_date,
+	CAST(dlrptg.START_TIME AS DATE)  AS event_date,
     dlrptg.START_TIME AS PLC_Start_Event_Dttm,
 	dlrptg.START_USER_ID AS PLC_Start_Event_User_Id,
     dlrptg.START_USER_NAME AS PLC_Start_Event_User_Name,
@@ -1227,12 +1170,11 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
 	dlrptg.END_Computer_Login_Id AS PLC_End_Event_User_UVA_Computing_ID,
     dlrptg.PAT_ENC_CSN_ID AS Discharge_Encounter,
 	dlrptg.PLC_Actual_Duration_Minutes,
-	dlrptg.PLC_Actual_Duration_Minutes_Less_Than_15,
+	dlrptg.PLC_Actual_Duration_Minutes_Less_Than_5,
 	dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time,
-    dlrptg.ADJUSTED_START_TIME AS Adjusted_PLC_Start_Event_Dttm,
     dlrptg.ADJUSTED_END_TIME AS Adjusted_PLC_End_Event_Dttm,
 	dlrptg.PLC_Adjusted_Duration_Minutes,
-	dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_15,
+	dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_5,
     CASE WHEN dlrptg.IP_DISCHARGE_PROV_ID IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_ID ELSE dlrptg.OPHOV_VISIT_PROV_ID END AS Discharge_Encounter_Provider_Id,
     CASE WHEN dlrptg.IP_DISCHARGE_PROV_NAME IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_NAME ELSE dlrptg.OPHOV_VISIT_PROV_NAME END AS Dischage_Encounter_Provider_Name,
     CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS Dischatge_Encounter_Department_Id,
@@ -1317,8 +1259,7 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
 	COALESCE(c.[clinical_area_name], 'No Clinical Area Assigned') clinical_area_name
 
   FROM #RptgTmp4 dlrptg
-  --LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	CAST(dlrptg.START_TIME AS DATE) = dd.day_date
-  LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	dlrptg.PLC_End_Date = dd.day_date
+  LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	CAST(dlrptg.START_TIME AS DATE) = dd.day_date
   LEFT JOIN	 CLARITY_App.Rptg.vwDim_Clrt_SERsrc						mdmprov		ON	dlrptg.ORDERING_PROV_ID = mdmprov.PROV_ID
   LEFT JOIN	 CLARITY_App.Rptg.vwRef_MDM_Location_Master_EpicSvc		mdmdept		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END	= mdmdept.epic_department_id
   LEFT JOIN CLARITY_App.Rptg.vwCLARITY_DEP							vwdep		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END = vwdep.DEPARTMENT_ID
@@ -1331,7 +1272,7 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
   ORDER BY
 	dlrptg.PAT_CLASS_NAME, CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after 18:00 or the event duration is less than 5 minutes 
 		WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0
-			AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_15 = 0
+			AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_5 = 0
 			THEN 1
 		ELSE 0 END DESC, dlrptg.START_TIME, dlrptg.PAT_ENC_CSN_ID
 

@@ -1,0 +1,40 @@
+GUAR_REL_TO_PAT_C,NAME,ABBR,ascend value
+DECLARE @GUAR_REL_TO_PAT TABLE
+(
+[GUAR_REL_TO_PAT_C] INTEGER,
+[NAME] VARCHAR(50),
+[ABBR] VARCHAR(50),
+[ASCEND_VALUE] VARCHAR(255)
+)
+
+INSERT INTO @GUAR_REL_TO_PAT
+(
+    GUAR_REL_TO_PAT_C,
+    NAME,
+    ABBR,
+    ASCEND_VALUE
+)
+VALUES
+ (3,'Daughter','DAU','Child')
+,(17,'Son','SON','Child')
+,(7,'Grandfather','GFT','Grand-Parent')
+,(8,'Grandmother','GMT','Grand-Parent')
+,(10,'Legal Guardian','LGD','Other - PHI')
+,(12,'Other','OTH','Other - PHI')
+,(21,'Unverified Proxy','PROXY','Other - PHI')
+,(23,'Visit Contact','VSTCNT','Other - PHI')
+,(4,'Father','FAT','Parent')
+,(11,'Mother','MOT','Parent')
+,(2,'Brother','BRO','Sibling')
+,(14,'Sister','SIS','Sibling')
+,(18,'Spouse','SPO','Spouse')
+,(13,'Step Father','SFT','Step-Parent')
+,(16,'Step Mother','SMT','Step-Parent')
+,(1,'Aunt','AUN','Uncle/Aunt')
+,(19,'Uncle','UNC','Uncle/Aunt')
+,(15,'Self','SLF','will be excluded')
+,(20,'Employer','EMPLOYER','DNC')
+,(22,'Transplant Recipient','TRANSPLANT R','DNC')
+,(100,"Donor, Kidney",'Kidney','DNC')
+,(101,"Donor, Liver",'Liver','DNC')
+,(102,"Donor, Stem Cell",'Stem Cell','DNC')

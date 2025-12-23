@@ -1,0 +1,27 @@
+LOC_ID,LOC_NAME,"Translate values as shown, all others ""UVA Hospital"""
+DECLARE @LOC_TO_HOSP TABLE
+(
+[LOC_ID] NUMERIC(18,0),
+[LOC_NAME] VARCHAR(100),
+[ASCEND_VALUE] VARCHAR(255)
+)
+
+INSERT INTO @LOC_TO_HOSP
+(
+    LOC_ID,
+    LOC_NAME,
+    ASCEND_VALUE
+)
+VALUES
+ (10295,'Culpeper Regional Hospital','Culpeper')
+,(10369,'UVA Culpeper Medical Center','Culpeper')
+,(10390,'UVA Health Primary Care Culpeper','Culpeper')
+,(10274,'UVA Health Specialty and Same Day Care Culpeper','Culpeper')
+,(10415,'UVA Outpatient Imaging Culpeper','Culpeper')
+,(10272,'UVA Specialty Care at Culpeper','Culpeper')
+,(10293,'UVA Specialty Care at Culpeper','Culpeper')
+,(10743,'UVA Haymarket Medical Center','Haymarket')
+,(10393,'UVA Prince William 8644 Sudley Road','Prince William')
+,(10429,'UVA Prince William Cardiology Warrenton','Prince William')
+,(10388,'UVA Prince William Hospital','Prince William')
+,(10437,'UVA Prince William Surgical Associates Manassas','Prince William')
