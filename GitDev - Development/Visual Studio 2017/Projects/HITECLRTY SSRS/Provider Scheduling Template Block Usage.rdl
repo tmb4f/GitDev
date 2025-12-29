@@ -4097,7 +4097,7 @@ ORDER BY
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Slot_Begin_Time1">
+                        <Textbox Name="Slot_Begin_Date_Time">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
@@ -4111,7 +4111,6 @@ ORDER BY
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Slot_Begin_Time1</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -4153,6 +4152,7 @@ ORDER BY
                             <PaddingBottom>2pt</PaddingBottom>
                           </Style>
                         </Textbox>
+                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell>
