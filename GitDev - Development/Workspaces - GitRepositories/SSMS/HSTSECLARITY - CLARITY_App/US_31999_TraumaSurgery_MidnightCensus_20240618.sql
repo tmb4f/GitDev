@@ -1,0 +1,221 @@
+USE CLARITY
+GO
+
+/*-----------------------------------------------------------------------------------------------------------------
+	WHAT: Midnight patient census data, for past 2-years (11/1/2020 - 10/31/2022),
+	for EPIC provider team "Trauma Surgery PIC#1450" (Acute Care Trauma).	Length of stay for same period and group.
+	TFS User Story 31999
+	WHO: Chris Mitchell
+	WHEN: 1/25/23
+	WHY: Staffing needs for Trauma Surgery team
+	-----------------------------------------------------------------------------------------------------------------
+	MODS: 
+	2/1/23 cjm2vk: changed last_value on the action to pull the action id, not the name of the action
+	2/2/23 cjm2vk: add location
+		1.	If Trauma ICU team listed and patient located in STICU / 5-North / Other ICU or IMU, then do not include 
+		in Trauma Surgery MN census numbers
+		2.	If Trauma ICU team listed and patient located in acute ward bed (5-West, 5-Central, or 6-West), then include
+		in Trauma Surgery MN census
+
+		STICU / 5 NORTH (DON'T INCLUDE IN TS MN CENSUS)
+		-- STICU 10243046
+		-- 5 north 10243090
+	
+		ACUTE WARD (INCLUDE IN TS MN CENSUS)
+		-- 5 west 10243060
+		-- 5 central 10243058
+		-- 6 west 10243063
+
+	2/6/23 cjm2vk: possible there's not an audit on every day there's an ADT census - fill out audit vs adt dates
+	2/6/23 cjm2vk: add patients w/ 101 service too, will count if on right unit
+-----------------------------------------------------------------------------------------------------------------------
+*/
+DECLARE @start DATETIME = '2021-01-01 00:00:00.000';
+DECLARE @END DATETIME = '2022-12-31 23:59:59';
+
+DROP TABLE IF EXISTS #pats;
+DROP TABLE IF EXISTS #adt;
+DROP TABLE IF EXISTS #audit_day;
+DROP TABLE IF EXISTS #audit_day2;
+DROP TABLE IF EXISTS #audit_day3;
+
+	SELECT DISTINCT 
+		 eta.PAT_ID
+		,eta.PAT_ENC_CSN_ID
+	INTO #pats
+	FROM CLARITY..EPT_TEAM_AUDIT eta
+	WHERE 1 = 1
+		AND eta.TEAM_AUDIT_ID IN (55,101)  -- TRAUMA SURGERY, TRAUMA ICU
+		AND eta.TEAM_AUDIT_INSTANT >=  @start
+		AND eta.TEAM_AUDIT_INSTANT <= @end
+
+	SELECT
+		 adt.DEPARTMENT_ID
+		,dep.DEPARTMENT_NAME
+		,adt.ROOM_ID
+		,adt.BED_ID
+		,CONVERT(DATE, adt.EFFECTIVE_TIME) AS EFFECTIVE_DT
+		,adt.PAT_ID
+		,adt.PAT_ENC_CSN_ID
+		,adt.EVENT_ID
+		,adt.EVENT_TYPE_C
+		,MIN(CONVERT(DATE,adt.EFFECTIVE_TIME)) OVER (PARTITION BY adt.PAT_ENC_CSN_ID) AS MIN_EFFECTIVE_DT
+		,MAX(CONVERT(DATE,adt.EFFECTIVE_TIME)) OVER (PARTITION BY adt.PAT_ENC_CSN_ID) AS MAX_EFFECTIVE_DT
+		,CASE WHEN adt.DEPARTMENT_ID IN 
+			(
+				-- ACUTE WARDS (INCLUDE IN TRAUMA SURG MIDNIGHT CENSUS)
+				'10243060', -- 5 WEST
+				'10243058',-- 5 CENTRAL
+				'10243063' -- 6 WEST
+			)
+		 THEN 1 ELSE 0 END AS ACUTE_FLAG
+	INTO #adt
+	FROM dbo.CLARITY_ADT adt
+	INNER JOIN #pats pats
+		ON adt.PAT_ID = pats.PAT_ID AND adt.PAT_ENC_CSN_ID = pats.PAT_ENC_CSN_ID
+	LEFT OUTER JOIN CLARITY..CLARITY_DEP dep
+		ON adt.DEPARTMENT_ID = dep.DEPARTMENT_ID
+	WHERE adt.EFFECTIVE_TIME >= @start AND adt.EFFECTIVE_TIME <= @end
+	AND adt.EVENT_TYPE_C = 6 -- census
+	AND adt.EVENT_SUBTYPE_C IN (1,3)
+	AND adt.PAT_ENC_CSN_ID IS NOT NULL
+
+
+	SELECT DISTINCT
+		 eta.PAT_ENC_CSN_ID
+		,eta.PAT_ID
+		,CONVERT(DATE,eta.TEAM_AUDIT_INSTANT) AS AUDIT_DT
+		,MIN(CONVERT(DATE,eta.TEAM_AUDIT_INSTANT)) OVER (PARTITION BY eta.PAT_ENC_CSN_ID) AS MIN_AUDIT_DT
+		,MAX(CONVERT(DATE,eta.TEAM_AUDIT_INSTANT)) OVER (PARTITION BY eta.PAT_ENC_CSN_ID) AS MAX_AUDIT_DT
+		,MAX(eta.TEAM_AUDIT_INSTANT) OVER (PARTITION BY eta.PAT_ENC_CSN_ID, CONVERT(DATE,TEAM_AUDIT_INSTANT)) AS LST_AUDIT_INST_DAY
+		,LAST_VALUE(eta.TEAM_AUDIT_ID) OVER (PARTITION BY eta.PAT_ENC_CSN_ID, CONVERT(DATE,TEAM_AUDIT_INSTANT) ORDER BY eta.TEAM_AUDIT_INSTANT RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS LST_AUDIT_ID
+		,LAST_VALUE(eta.TEAM_ACTION_C) OVER (PARTITION BY eta.PAT_ENC_CSN_ID, CONVERT(DATE,TEAM_AUDIT_INSTANT) ORDER BY eta.TEAM_AUDIT_INSTANT RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS LST_AUDIT_ACTION
+	INTO #audit_day
+	FROM CLARITY..EPT_TEAM_AUDIT eta
+	LEFT OUTER JOIN CLARITY..ZC_TEAM_ACTION zta
+		ON eta.TEAM_ACTION_C = zta.TEAM_ACTION_C
+	INNER JOIN #pats pats
+		ON eta.PAT_ID = pats.PAT_ID AND eta.PAT_ENC_CSN_ID = pats.PAT_ENC_CSN_ID
+	WHERE eta.TEAM_AUDIT_INSTANT >= @start AND eta.TEAM_AUDIT_INSTANT <= @end
+
+	SELECT DISTINCT
+			audit_day.PAT_ENC_CSN_ID
+		,c.CALENDAR_DT AS ASSIGNED_DT
+		,( -- Get LST_AUDIT_ID FOR AUDIT RANGE
+			SELECT TOP (1)
+				A.LST_AUDIT_ID
+			FROM #audit_day AS A
+			WHERE A.AUDIT_DT <= c.CALENDAR_DT AND A.PAT_ENC_CSN_ID = C.PAT_ENC_CSN_ID
+			ORDER BY A.AUDIT_DT DESC
+			) AS LST_AUDIT_ID
+		,( -- Get LST_AUDIT_ACTN FOR AUDIT RANGE
+			SELECT TOP (1)
+				A.LST_AUDIT_ACTION
+			FROM #audit_day AS A
+			WHERE A.AUDIT_DT <= c.CALENDAR_DT AND A.PAT_ENC_CSN_ID = C.PAT_ENC_CSN_ID
+			ORDER BY A.AUDIT_DT DESC
+			) AS LST_AUDIT_ACTION
+		,CASE WHEN
+			( -- if last action of a day is remove...flag it
+			SELECT TOP (1)
+				A.LST_AUDIT_ACTION
+			FROM #audit_day AS A
+			WHERE A.AUDIT_DT <= c.CALENDAR_DT AND A.PAT_ENC_CSN_ID = C.PAT_ENC_CSN_ID
+			ORDER BY A.AUDIT_DT DESC
+			) = '3' THEN 1 ELSE 0 END AS SVC_REMOVED -- 3 = removed
+	INTO #audit_day2
+	FROM #audit_day audit_day
+	LEFT OUTER JOIN 
+	(
+		SELECT
+			 dd.CALENDAR_DT
+			,x.PAT_ENC_CSN_ID
+		FROM CLARITY..DATE_DIMENSION dd
+		CROSS APPLY (SELECT DISTINCT PAT_ENC_CSN_ID FROM #audit_day) AS x
+		WHERE dd.CALENDAR_DT >= @start AND dd.CALENDAR_DT <= @end
+	) c
+		ON c.CALENDAR_DT BETWEEN audit_day.MIN_AUDIT_DT AND audit_day.MAX_AUDIT_DT AND c.PAT_ENC_CSN_ID = audit_day.PAT_ENC_CSN_ID
+
+	SELECT DISTINCT
+			audit_day2.PAT_ENC_CSN_ID
+		,c.CALENDAR_DT AS ASSIGNED_DT
+		,( -- Get LST_AUDIT_ID FOR ADT RANGE
+			SELECT TOP (1)
+				A.LST_AUDIT_ID
+			FROM #audit_day2 AS A
+			WHERE A.ASSIGNED_DT <= c.CALENDAR_DT AND A.PAT_ENC_CSN_ID = C.PAT_ENC_CSN_ID
+			ORDER BY A.ASSIGNED_DT DESC
+			) AS LST_AUDIT_ID
+		,( -- Get LST_AUDIT_ACTN FOR ADT RANGE
+			SELECT TOP (1)
+				A.LST_AUDIT_ACTION
+			FROM #audit_day2 AS A
+			WHERE A.ASSIGNED_DT <= c.CALENDAR_DT AND A.PAT_ENC_CSN_ID = C.PAT_ENC_CSN_ID
+			ORDER BY A.ASSIGNED_DT DESC
+			) AS LST_AUDIT_ACTION
+		,CASE WHEN
+			( -- if last action of a day is remove...flag it
+			SELECT TOP (1)
+				A.LST_AUDIT_ACTION
+			FROM #audit_day2 AS A
+			WHERE A.ASSIGNED_DT <= c.CALENDAR_DT AND A.PAT_ENC_CSN_ID = C.PAT_ENC_CSN_ID
+			ORDER BY A.ASSIGNED_DT DESC
+			) = '3' THEN 1 ELSE 0 END AS SVC_REMOVED -- 3 = removed
+	INTO #audit_day3
+	FROM #audit_day2 audit_day2
+	INNER JOIN #adt adt
+		ON audit_day2.PAT_ENC_CSN_ID = adt.PAT_ENC_CSN_ID
+	LEFT OUTER JOIN 
+	(
+		SELECT
+			 dd.CALENDAR_DT
+			,x.PAT_ENC_CSN_ID
+		FROM CLARITY..DATE_DIMENSION dd
+		CROSS APPLY (SELECT DISTINCT PAT_ENC_CSN_ID FROM #audit_day) AS x
+		WHERE dd.CALENDAR_DT >= @start AND dd.CALENDAR_DT <= @end
+	) c
+		ON c.CALENDAR_DT BETWEEN adt.MIN_EFFECTIVE_DT AND adt.MAX_EFFECTIVE_DT AND c.PAT_ENC_CSN_ID = audit_day2.PAT_ENC_CSN_ID
+
+SELECT DISTINCT
+	 adt.EVENT_ID
+	,adt.EFFECTIVE_DT
+	,IIF(ad3.LST_AUDIT_ID = 55 AND ad3.SVC_REMOVED <> 1,1,IIF(ad3.LST_AUDIT_ID = 101 AND ad3.SVC_REMOVED <> 1 AND adt.ACUTE_FLAG = 1,1,0)) AS EVENT_COUNT
+	,evt.NAME AS EVENT_TYPE
+	,PC.NAME AS PAT_CLASS
+	,pat.PAT_MRN_ID
+	,adt.PAT_ID
+	,pat.PAT_NAME
+	,adt.PAT_ENC_CSN_ID
+	,adt.DEPARTMENT_ID
+	,adt.DEPARTMENT_NAME
+	,adt.ACUTE_FLAG
+	,adt.ROOM_ID
+	,adt.BED_ID
+	,ad3.LST_AUDIT_ID
+	,ptri.RECORD_NAME
+	,ad3.LST_AUDIT_ACTION
+FROM #adt adt
+INNER JOIN ADT_INTERPRETATION ait
+	ON adt.EVENT_ID = ait.EVENT_ID
+INNER JOIN PATIENT pat
+	ON adt.PAT_ID = pat.PAT_ID
+INNER JOIN PAT_ENC_HSP peh
+	ON adt.PAT_ENC_CSN_ID = peh.PAT_ENC_CSN_ID
+INNER JOIN ZC_PAT_CLASS pc
+	ON peh.ADT_PAT_CLASS_C = pc.ADT_PAT_CLASS_C
+INNER JOIN #audit_day3 ad3
+	ON adt.PAT_ENC_CSN_ID = ad3.PAT_ENC_CSN_ID AND adt.EFFECTIVE_DT = ad3.ASSIGNED_DT
+LEFT OUTER JOIN CLARITY..PROVTEAM_REC_INFO ptri
+	ON ad3.LST_AUDIT_ID = ptri.ID
+LEFT OUTER JOIN dbo.ZC_EVENT_TYPE evt
+	ON adt.EVENT_TYPE_C = evt.EVENT_TYPE_C
+ORDER BY adt.PAT_ID, adt.PAT_ENC_CSN_ID, adt.EFFECTIVE_DT
+
+DROP TABLE IF EXISTS #pats;
+DROP TABLE IF EXISTS #adt;
+DROP TABLE IF EXISTS #audit_day;
+DROP TABLE IF EXISTS #audit_day2;
+DROP TABLE IF EXISTS #audit_day3;
+
+
+	

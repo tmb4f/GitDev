@@ -1,0 +1,17 @@
+USE [CLARITY_App]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [Rptg].[UA_GPP_Provider_Division_Mapping](
+	[Epic_Financial_Division] [VARCHAR](254) NULL,
+	[ASCEND_VALUE] [VARCHAR](255) NULL
+) ON [PRIMARY]
+GO
+
+GRANT DELETE, INSERT, SELECT, UPDATE ON [Rptg].[UA_GPP_Provider_Division_Mapping] TO [HSCDOM\Decision Support]
+GO

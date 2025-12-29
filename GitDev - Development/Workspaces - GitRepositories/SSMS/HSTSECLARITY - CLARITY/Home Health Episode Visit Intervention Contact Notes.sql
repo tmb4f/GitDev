@@ -1,0 +1,67 @@
+USE CLARITY
+
+IF OBJECT_ID('tempdb..#intvtn ') IS NOT NULL
+DROP TABLE #intvtn
+
+IF OBJECT_ID('tempdb..#intvtnnotes ') IS NOT NULL
+DROP TABLE #intvtnnotes
+
+IF OBJECT_ID('tempdb..#cntctnotes ') IS NOT NULL
+DROP TABLE #cntctnotes
+
+SELECT DISTINCT
+       info.[INTERVENTION_ID]
+      ,[INTRVNTION_TYPE_ID]
+	  ,type.INTRVNTN_TYPE_NAME
+      ,[CREATE_DATE]
+      ,[INITIAL_NOTES_ID]
+      ,[INCLUDE_NOTES]
+      ,[HH_EPISODE_ID]
+  INTO #intvtn
+  FROM [CLARITY].[dbo].[HH_INTVTN_INFO] info
+  LEFT OUTER JOIN CLARITY.dbo.INTRVTN_TYPE type
+  ON type.INTRVNTN_TYPE_ID = info.INTRVNTION_TYPE_ID
+  WHERE HH_EPISODE_ID = 90930153
+
+  SELECT
+	*
+  FROM #intvtn info
+  ORDER BY info.INTERVENTION_ID, info.INITIAL_NOTES_ID
+
+SELECT DISTINCT
+       info.[INTERVENTION_ID]
+      ,info.[INITIAL_NOTES_ID]
+	  ,hno.UPDATE_DATE
+	  ,hnotxt.LINE
+	  ,hnotxt.NOTE_TEXT
+  INTO #intvtnnotes
+  FROM #intvtn info
+  LEFT OUTER JOIN CLARITY.dbo.HNO_INFO hno
+  ON hno.NOTE_ID = info.INITIAL_NOTES_ID
+  LEFT OUTER JOIN CLARITY.dbo.HNO_NOTE_TEXT hnotxt
+  ON hnotxt.NOTE_ID = hno.NOTE_ID
+
+  SELECT
+	*
+  FROM #intvtnnotes info
+  ORDER BY info.INTERVENTION_ID, info.INITIAL_NOTES_ID, info.UPDATE_DATE, info.LINE
+
+SELECT DISTINCT
+       info.[INTERVENTION_ID]
+	  ,cnt.CONTACT_NOTES_ID
+	  ,hno.UPDATE_DATE
+	  ,hnotxt.LINE
+	  ,hnotxt.NOTE_TEXT
+  INTO #cntctnotes
+  FROM #intvtn info
+  LEFT OUTER JOIN CLARITY.dbo.HH_INTVTN_CONTACT cnt
+  ON cnt.INTERVENTION_ID = info.INTERVENTION_ID
+  INNER JOIN CLARITY.dbo.HNO_INFO hno
+  ON cnt.CONTACT_NOTES_ID = hno.NOTE_ID
+  LEFT OUTER JOIN CLARITY.dbo.HNO_NOTE_TEXT hnotxt
+  ON hnotxt.NOTE_ID = hno.NOTE_ID
+
+  SELECT
+	*
+  FROM #cntctnotes cnt
+  ORDER BY cnt.INTERVENTION_ID, cnt.CONTACT_NOTES_ID, cnt.UPDATE_DATE, cnt.LINE

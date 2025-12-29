@@ -1,0 +1,344 @@
+USE CLARITY
+
+IF OBJECT_ID('tempdb..#provvol ') IS NOT NULL
+DROP TABLE #provvol
+
+/* 9/25/2024 */
+SELECT		npi.NPI
+		,MAX(ser.PROV_NAME) 'Display name'
+		--,MAX(zcsp.NAME) 'Specialty'
+		,MAX(COALESCE(zcsp.NAME,ser.PROV_TYPE)) 'Specialty'
+		,MAX(dt.month_name) 'month'
+		,dt.fmonth_num
+		,dt.year_num 'Year'
+		,dept.DEPARTMENT_ID
+		,dept.DEPARTMENT_NAME 'Primary clinic'
+		,COUNT(enc.PAT_ENC_CSN_ID) 'Encounters'
+
+INTO #provvol
+
+FROM dbo.PAT_ENC enc
+	INNER JOIN (
+					SELECT idx.IDENTITY_ID 'NPI'
+							,idx.PROV_ID
+					FROM CLARITY.dbo.IDENTITY_SER_ID idx
+					WHERE idx.IDENTITY_TYPE_ID='100001'
+			   ) npi								ON enc.VISIT_PROV_ID=npi.PROV_ID
+	INNER JOIN dbo.CLARITY_SER ser					ON ser.PROV_ID = npi.PROV_ID
+	LEFT OUTER JOIN
+	(
+	SELECT
+		NPINumber,
+		ProviderGroup
+	FROM CLARITY_App.dbo.Dim_Physcn
+	WHERE current_flag = 1
+	) doc		ON doc.NPINumber = npi.NPI
+	LEFT OUTER JOIN (SELECT *
+				FROM dbo.CLARITY_SER_SPEC
+				WHERE LINE='1') sp					ON sp.PROV_ID = ser.PROV_ID
+	LEFT OUTER JOIN dbo.ZC_SPECIALTY zcsp					ON zcsp.SPECIALTY_C = sp.SPECIALTY_C
+	LEFT OUTER JOIN (SELECT *
+				FROM dbo.CLARITY_SER_DEPT dep
+				) dep				ON (dep.DEPARTMENT_ID = enc.DEPARTMENT_ID)
+				AND (dep.PROV_ID = COALESCE(sp.PROV_ID,ser.PROV_ID))
+	INNER JOIN dbo.CLARITY_DEP dept					ON dep.DEPARTMENT_ID=dept.DEPARTMENT_ID
+	INNER JOIN CLARITY_App.dbo.Dim_Date dt				ON CAST(dt.day_date AS DATE)=CAST(enc.APPT_TIME AS DATE)
+/*
+WHERE 1=1
+AND  (@NPI IS NULL OR npi.NPI IN (SELECT * FROM CLARITY.ETL.fn_ParmParse(@NPI,',')))
+AND enc.APPT_STATUS_C in ('2','6')--completed
+AND dt.day_date >=@StartDate
+AND dt.day_date <=@EndDate
+AND npi.NPI IS NOT NULL
+--AND doc.ProviderGroup IN ('AHP', 'APP', 'Clin Staff') 
+GROUP BY npi.NPI,dt.year_num, dt.fmonth_num, dept.DEPARTMENT_NAME
+*/
+--SELECT		npi.NPI
+--		,dt.year_num 'Year'
+--		,dt.fmonth_num
+--		,dt.month_name 'month'
+--		,dept.DEPARTMENT_NAME
+--		,ser.PROV_NAME 'Display name'
+--		,zcsp.NAME 'Specialty'
+--		,enc.PAT_ENC_CSN_ID 'Encounters'
+--		,enc.APPT_STATUS_C
+
+--SELECT		npi.NPI
+--		,MAX(ser.PROV_NAME) 'Display name'
+--		,MAX(zcsp.NAME) 'Specialty'
+--		--,MAX(dept.DEPARTMENT_NAME) 'Primary clinic'
+--		,MAX(dt.month_name) 'month'
+--		,dt.fmonth_num
+--		,dt.year_num 'Year'
+--		,dept.DEPARTMENT_NAME 'Primary clinic'
+--		,COUNT(enc.PAT_ENC_CSN_ID) 'Encounters'
+
+--FROM dbo.PAT_ENC enc
+--	INNER JOIN (
+--					SELECT idx.IDENTITY_ID 'NPI'
+--							,idx.PROV_ID
+--					FROM CLARITY.dbo.IDENTITY_SER_ID idx
+--					WHERE idx.IDENTITY_TYPE_ID='100001'
+--			   ) npi								ON enc.VISIT_PROV_ID=npi.PROV_ID
+--	INNER JOIN dbo.CLARITY_SER ser					ON ser.PROV_ID = npi.PROV_ID
+--	--INNER JOIN (SELECT *
+--	--			FROM dbo.CLARITY_SER_SPEC
+--	--			WHERE LINE='1') sp					ON sp.PROV_ID = ser.PROV_ID
+--	LEFT OUTER JOIN (SELECT *
+--				FROM dbo.CLARITY_SER_SPEC
+--				WHERE LINE='1') sp					ON sp.PROV_ID = ser.PROV_ID
+--	--INNER JOIN dbo.ZC_SPECIALTY zcsp					ON zcsp.SPECIALTY_C = sp.SPECIALTY_C
+--	LEFT OUTER JOIN dbo.ZC_SPECIALTY zcsp					ON zcsp.SPECIALTY_C = sp.SPECIALTY_C
+--	--INNER JOIN (SELECT *
+--	--			FROM dbo.CLARITY_SER_DEPT dep
+--	--			) dep				ON (dep.DEPARTMENT_ID = enc.DEPARTMENT_ID)
+--	--			AND (dep.PROV_ID = sp.PROV_ID)
+--	INNER JOIN (SELECT *
+--				FROM dbo.CLARITY_SER_DEPT dep
+--				) dep				ON (dep.DEPARTMENT_ID = enc.DEPARTMENT_ID)
+--				AND (dep.PROV_ID = COALESCE(sp.PROV_ID,ser.PROV_ID))
+--	INNER JOIN dbo.CLARITY_DEP dept					ON dep.DEPARTMENT_ID=dept.DEPARTMENT_ID
+--	--LEFT OUTER JOIN dbo.CLARITY_DEP dept					ON dep.DEPARTMENT_ID=dept.DEPARTMENT_ID
+--	INNER JOIN CLARITY_App.dbo.Dim_Date dt				ON CAST(dt.day_date AS DATE)=CAST(enc.APPT_TIME AS DATE)
+
+WHERE 1=1
+--AND  NPI = '1215149083'
+--AND NPI IN ('1164849089',
+--'1669542833',
+--'1700436839',
+--'1740706803',
+--'1740941871',
+--'1750319638',
+--'1750405890',
+--'1750558870',
+--'1750605374',
+--'1750638979',
+--'1750671756',
+--'1750868170',
+--'1750884060',
+--'1760456701',
+--'1760466163',
+--'1760511711',
+--'1760626816',
+--'1760688105',
+--'1760694475',
+--'1760696231',
+--'1760731806',
+--'1760822704',
+--'1760864391',
+--'1760908412',
+--'1760912257',
+--'1760943401',
+--'1770602898',
+--'1770652307',
+--'1770666935',
+--'1770738205',
+--'1770782310',
+--'1770873986',
+--'1770926974',
+--'1780046060',
+--'1780112508',
+--'1780656256',
+--'1780676478',
+--'1780730036',
+--'1780739250',
+--'1780753319',
+--'1780772137',
+--'1780842872',
+--'1780866582',
+--'1780908277',
+--'1780952747',
+--'1790103356',
+--'1790125102',
+--'1790126944',
+--'1790149466',
+--'1790302040',
+--'1790782795',
+--'1790854313',
+--'1790856185',
+--'1790949600',
+--'1790985778',
+--'1801009436',
+--'1801153598',
+--'1801282124',
+--'1801493283',
+--'1801911755',
+--'1801933197',
+--'1801969902',
+--'1811066442',
+--'1811066459',
+--'1811128846',
+--'1811155542',
+--'1811156284',
+--'1811156649',
+--'1811190598',
+--'1811286073',
+--'1811412240',
+--'1811427172',
+--'1811542624',
+--'1811943251',
+--'1821089558',
+--'1821101965',
+--'1821167461',
+--'1821216664',
+--'1821364852',
+--'1821393786',
+--'1821435025',
+--'1821467473',
+--'1821615758',
+--'1831176080',
+--'1831230267',
+--'1831277862',
+--'1831281328',
+--'1831783158',
+--'1831897883',
+--'1841276375',
+--'1841279825',
+--'1841330008',
+--'1841360013',
+--'1841372356',
+--'1841392164',
+--'1841407830',
+--'1841452554',
+--'1851460489',
+--'1851555601',
+--'1851658710',
+--'1851925093',
+--'1861048274',
+--'1861174161',
+--'1861420986',
+--'1861449886',
+--'1861561409',
+--'1861631715',
+--'1861700239',
+--'1861702797',
+--'1861804098',
+--'1861881682',
+--'1871024547',
+--'1871098707',
+--'1871538009',
+--'1871557595',
+--'1871659581',
+--'1871662403',
+--'1871662494',
+--'1881199610',
+--'1881616365',
+--'1881629921',
+--'1881754075',
+--'1881763407',
+--'1881763423',
+--'1881905156',
+--'1881905263',
+--'1891061024',
+--'1891108718',
+--'1891114831',
+--'1891243507',
+--'1891258398',
+--'1891986485',
+--'1902064330',
+--'1902319460',
+--'1902418015',
+--'1902865157',
+--'1902897929',
+--'1912076555',
+--'1912114992',
+--'1912119991',
+--'1912141425',
+--'1912146655',
+--'1912221755',
+--'1912258971',
+--'1912293150',
+--'1912676594',
+--'1912910787',
+--'1912954199',
+--'1912976077',
+--'1922151109',
+--'1922177534',
+--'1922266048',
+--'1922374198',
+--'1922799162',
+--'1932139383',
+--'1932158615',
+--'1932182524',
+--'1932322948',
+--'1932326436',
+--'1932457934',
+--'1932558350',
+--'1932593738',
+--'1942345871',
+--'1942357835',
+--'1942363726',
+--'1942374483',
+--'1942567706',
+--'1942610704',
+--'1942732243',
+--'1942743265',
+--'1942915608',
+--'1952342644',
+--'1952419517',
+--'1952502718',
+--'1952797169',
+--'1962057877',
+--'1962136887',
+--'1962458539',
+--'1962571505',
+--'1962571596',
+--'1962610022',
+--'1962853838',
+--'1962933424',
+--'1972194850',
+--'1972211183',
+--'1972231678',
+--'1972604882',
+--'1972632974',
+--'1972655934',
+--'1972672509',
+--'1972691376',
+--'1972802445',
+--'1972819076',
+--'1972843886',
+--'1972946796',
+--'1982692588',
+--'1982738548',
+--'1982773529',
+--'1982773594',
+--'1982831541',
+--'1982836706',
+--'1982856175',
+--'1982930459',
+--'1992062137',
+--'1992102214',
+--'1992160717',
+--'1992236079',
+--'1992324271',
+--'1992717961',
+--'1992750608',
+--'1992839716',
+--'1992917827',
+--'1992964134'
+--)
+--AND NPI IN ('1417946310',
+--'1700436839')
+--AND NPI IN ('1619752524',
+--'1669659785')
+--AND ser.PROV_ID IN ('40708'
+--,'53718')
+--AND (ser.PROV_NAME LIKE '%Karns%' OR ser.PROV_NAME LIKE '%Noble%')
+AND enc.APPT_STATUS_C in ('2','6')--completed
+--AND dt.day_date >='7/1/2014'
+--AND dt.day_date <='7/31/2014'
+--AND dt.day_date >='7/1/2023'
+--AND dt.day_date <='8/31/2024'
+AND dt.day_date >='8/1/2024'
+AND dt.day_date <='8/31/2024'
+AND npi.NPI IS NOT NULL 
+--GROUP BY npi.NPI,dt.year_num, dt.fmonth_num, dept.DEPARTMENT_NAME
+GROUP BY npi.NPI,dt.year_num, dt.fmonth_num, dept.DEPARTMENT_ID, dept.DEPARTMENT_NAME
+
+SELECT
+	vol.*,
+	hsp.HOSPITAL_CODE
+FROM #provvol vol
+LEFT OUTER JOIN CLARITY_App.Rptg.vwRef_MDM_Location_Master_Hospital_Group_ALL hsp
+ON hsp.EPIC_DEPARTMENT_ID = vol.DEPARTMENT_ID
+ORDER BY NPI, Year, fmonth_num--, dept.DEPARTMENT_NAME

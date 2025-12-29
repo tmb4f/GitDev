@@ -10,13 +10,8 @@ DECLARE @EndDate AS DATETIME
 --SET @EndDate = CAST(DATEADD(DAY,-1,CAST(GETDATE() AS DATE)) AS DATETIME)
 --SET @StartDate = DATEADD(MONTH,-2,@EndDate)
 
---SET @StartDate = '8/18/2025 00:00 AM'
---SET @EndDate = '8/29/2025 11:59 PM'
-
---SET @StartDate = '8/18/2025 00:00 AM'
---SET @EndDate = '9/28/2025 11:59 PM'
-SET @StartDate = '10/1/2025 00:00 AM'
-SET @EndDate = '10/31/2025 11:59 PM'
+SET @StartDate = '8/18/2025 00:00 AM'
+SET @EndDate = '8/29/2025 11:59 PM'
 
 IF OBJECT_ID('tempdb..#avail_slot ') IS NOT NULL
 DROP TABLE #avail_slot
@@ -355,9 +350,9 @@ FROM (SELECT ID FROM @DepartmentsSelect) DepartmentsSelect
 --SET @Departments = '10244004' --  UVWC OPHTHALMOLOGY -- Test
 --SET @Departments = '10419014' -- OCIR SPORTS MED -- Test
 --SET @Departments = '10243003' --  UVHE DIGESTIVE HEALTH'
---SET @Departments = '10390001' -- CPBE PRIMARY CARE
-SET @Departments = '10387001' -- CVSM PRIMARY CARE
---SET @Departments = '10236001' -- SDGR FAMILY MEDICINE
+SET @Departments = '10390001' -- CPBE PRIMARY CARE
+--SET @Departments = '10387001' -- CVSM PRIMARY CARE
+----SET @Departments = '10236001' -- SDGR FAMILY MEDICINE
 
 --SELECT @Departments AS DepartmentsSelect
 
@@ -381,7 +376,7 @@ CLARITY.dbo.V_AVAILABILITY v ON v.PROV_ID = ser.PROV_ID LEFT OUTER JOIN
 CLARITY_App.Rptg.vwCLARITY_SER_OT_PROV_TYPE ptot ON ser.PROV_ID = ptot.PROV_ID AND v.SLOT_DATE BETWEEN ptot.CONTACT_DATE AND ptot.EFF_TO_DATE
 WHERE 1=1
 AND v.APPT_NUMBER = 0
--- AND v.ORG_REG_OPENINGS  > 0
+AND v.ORG_REG_OPENINGS  > 0
 AND v.DEPARTMENT_ID IN (SELECT value FROM STRING_SPLIT(@Departments,','))
 AND CONVERT(DATE,v.SLOT_DATE) BETWEEN @startdate AND @enddate
 --AND 8 NOT IN (SELECT value AS ID FROM STRING_SPLIT(@Hierarchy,',')) -- @HierarchyLookup <> 8
@@ -398,7 +393,7 @@ CLARITY.dbo.V_AVAILABILITY v ON v.PROV_ID = ser.PROV_ID LEFT OUTER JOIN
 CLARITY_App.Rptg.vwCLARITY_SER_OT_PROV_TYPE ptot ON ser.PROV_ID = ptot.PROV_ID AND v.SLOT_DATE BETWEEN ptot.CONTACT_DATE AND ptot.EFF_TO_DATE
 WHERE 1=1
 AND v.APPT_NUMBER = 0
--- AND v.ORG_REG_OPENINGS  > 0
+AND v.ORG_REG_OPENINGS  > 0
 AND CONVERT(DATE,v.SLOT_DATE) BETWEEN @startdate AND @enddate
 --AND 8 IN (SELECT value AS ID FROM STRING_SPLIT(@Hierarchy,',')) -- @HierarchyLookup = 8
 AND @HierarchyLookup = 8
@@ -441,7 +436,7 @@ FROM CLARITY.dbo.CLARITY_SER ser INNER JOIN
 CLARITY.dbo.V_AVAILABILITY v ON v.PROV_ID = ser.PROV_ID
 WHERE 1=1
 AND v.APPT_NUMBER = 0
--- AND v.ORG_REG_OPENINGS  > 0
+AND v.ORG_REG_OPENINGS  > 0
 AND v.DEPARTMENT_ID IN (SELECT value FROM STRING_SPLIT(@Departments,','))
 AND ser.PROVIDER_TYPE_C IN (SELECT value FROM STRING_SPLIT(@ProviderTypes,','))
 AND CONVERT(DATE,v.SLOT_DATE) BETWEEN @startdate AND @enddate
@@ -457,7 +452,7 @@ FROM CLARITY.dbo.CLARITY_SER ser INNER JOIN
 CLARITY.dbo.V_AVAILABILITY v ON v.PROV_ID = ser.PROV_ID
 WHERE 1=1
 AND v.APPT_NUMBER = 0
--- AND v.ORG_REG_OPENINGS  > 0
+AND v.ORG_REG_OPENINGS  > 0
 AND ser.PROVIDER_TYPE_C IN (SELECT value FROM STRING_SPLIT(@ProviderTypes,','))
 AND CONVERT(DATE,v.SLOT_DATE) BETWEEN @startdate AND @enddate
 --AND 8 IN (SELECT value AS ID FROM STRING_SPLIT(@Hierarchy,',')) -- @HierarchyLookup = 8
@@ -491,13 +486,9 @@ FROM (SELECT PROV_ID FROM @ProvidersSelect) ProvidersSelect
 --SET @Providers = '39919' -- BROCKMEIER, STEPHEN F
 --SET @Providers = '133107,99437' -- SU, CHARLES;PUGH, GARY MICHAEL
 --SET @Providers = '105577' -- BIGELOW, WILLIAM
---SET @Providers = '61052' -- SULLIVAN, ELIZABETH
---SET @Providers = '61052,154511' -- SULLIVAN, ELIZABETH; ?
---SET @Providers = '154511' -- RAMOS, ALONDRE
--- SET @Providers = '137163,83062,96293' -- Anna Morency; Kristen Weldon; Emily Bailey
+SET @Providers = '154511' -- RAMOS, ALONDRE
 
 --*--SELECT @Providers AS ProvidersSelect
-
 SELECT 
           avail.department_id, 
 		  department_name = avail.DEPARTMENT_NAME,
@@ -537,6 +528,7 @@ SELECT
 
     from dbo.V_AVAILABILITY avail 
 
+	--INNER join CLARITY_App.Rptg.vwDim_Date dd				ON avail.SLOT_DATE = dd.day_date
 	INNER join dbo.DATE_DIMENSION dd				ON avail.SLOT_DATE = dd.CALENDAR_DT
 	LEFT OUTER JOIN dbo.CLARITY_SER ser			ON avail.PROV_ID = ser.PROV_ID
 	LEFT OUTER JOIN dbo.CLARITY_DEP dep						ON dep.DEPARTMENT_ID = avail.DEPARTMENT_ID              
@@ -557,13 +549,13 @@ SELECT
 			(@HierarchyLookup = 8 AND COALESCE(ser.RPT_GRP_EIGHT,'0')	IN (SELECT value FROM STRING_SPLIT(@Departments,',')) ) -- says department but the department parameter does department and financial subdivision
 			 )
 	AND avail.PROV_ID IN (SELECT value FROM STRING_SPLIT(@Providers,','))
-	-- AND avail.PROV_ID IN ('137163', -- Anna Morency
-	-- '83062', -- Kristen Weldon
-	-- '96293' -- Emily Bailey
-	-- )
+ --   AND dd.day_date >= @StartDate
+	--AND dd.day_date <= @EndDate
     AND dd.CALENDAR_DT >= @StartDate
 	AND dd.CALENDAR_DT <= @EndDate
 	AND avail.UNAVAILABLE_RSN_NAME IS NULL
+
+	--AND avail.SLOT_BEGIN_TIME = '6/10/2025 08:00 AM'
 
 	ORDER BY 
           avail.department_id, 
@@ -573,13 +565,37 @@ SELECT
 
   CREATE UNIQUE CLUSTERED INDEX IX_avail_slot ON #avail_slot (DEPARTMENT_ID, PROV_ID, SLOT_BEGIN_TIME, appt_slot_number)
 
---   SELECT
--- 	*
---   FROM #avail_slot
---   ORDER BY
--- 	PROV_ID,
--- 	DEPARTMENT_ID,
--- 	SLOT_BEGIN_TIME
+ -- SELECT
+	--DEPARTMENT_ID,
+ --   department_name,
+ --   department_service_line,
+ --   pod_name,
+ --   PROV_ID,
+ --   provider,
+ --   provider_type,
+ --   person_or_resource,
+ --   DAY_OF_WEEK,
+ --   SLOT_DATE,
+ --   SLOT_BEGIN_TIME,
+ --   SLOT_LENGTH,
+ --   booked_length,
+ --   appt_slot_number,
+ --   NUM_APTS_SCHEDULED,
+ --   regular_openings,
+ --   overbook_openings,
+ --   openings,
+ --   template_block_name,
+ --   unavailable_reason,
+ --   overbook_yn,
+ --   outside_template_yn,
+ --   held_yn,
+ --   regular_opening_yn,
+ --   MRN,
+ --   visit_type,
+ --   appt_status,
+ --   UNAVAILABLE_RSN_C,
+ --   UNAVAILABLE_RSN_NAME
+ -- FROM #avail_slot
 
 SELECT
 	department_id,
@@ -617,7 +633,6 @@ ORDER BY
     sum1.num_outside_template_apts_scheduled,
     sum1.provider_type,
     sum2.visit_types,
-	sum3.appt_status,
 	sum1.regular_openings_available
 INTO #avail_slot_summary
 FROM
@@ -649,6 +664,7 @@ SELECT
 	prov_id,
 	slot_begin_time,
 	STUFF((
+	--SELECT ',' + CAST(innerTable.visit_type AS varchar(30))
 	SELECT ',' + CAST(innerTable.visit_type AS varchar(30)) + ' ' + CAST(COUNT(innerTable.visit_type) AS VARCHAR(5))
 	FROM #avail_slot AS innerTable
 	WHERE innerTable.department_id = p.department_id
@@ -671,36 +687,6 @@ GROUP BY
 ON sum2.department_id = sum1.department_id
 AND sum2.prov_id = sum1.prov_id
 AND sum2.slot_begin_time = sum1.slot_begin_time
-LEFT OUTER JOIN
-(
-SELECT
-	department_id,
-	prov_id,
-	slot_begin_time,
-	STUFF((
-	SELECT ',' + CAST(innerTable.appt_status AS varchar(30)) + ' ' + CAST(COUNT(innerTable.appt_status) AS VARCHAR(5))
-	FROM #avail_slot AS innerTable
-	WHERE innerTable.department_id = p.department_id
-	AND innerTable.prov_id = p.prov_id
-	AND innerTable.slot_begin_time = p.slot_begin_time
-	GROUP BY
-		innerTable.department_id,
-		innerTable.prov_id,
-		innerTable.slot_begin_time,
-		innerTable.visit_type,
-		innerTable.appt_status
-	FOR XML PATH('')
-	),1,1,'') AS appt_status
-FROM #avail_slot p
-WHERE p.appt_slot_number > 0
-GROUP BY
-	department_id,
-	prov_id,
-	slot_begin_time
-) sum3
-ON sum3.department_id = sum1.department_id
-AND sum3.prov_id = sum1.prov_id
-AND sum3.slot_begin_time = sum1.slot_begin_time
 ORDER BY
 	sum1.DEPARTMENT_ID,
 	sum1.PROV_ID,
@@ -720,24 +706,25 @@ SELECT blk.DEPARTMENT_ID
 	 , COALESCE(blk.BLOCKS_USED,0) AS BLOCKS_USED
 INTO #avail_block
 FROM dbo.AVAIL_BLOCK blk
+--INNER join CLARITY_App.Rptg.vwDim_Date dd				ON CAST(CAST(blk.SLOT_BEGIN_TIME AS DATE) AS SMALLDATETIME)  = dd.day_date
 INNER join dbo.DATE_DIMENSION dd				ON CAST(CAST(blk.SLOT_BEGIN_TIME AS DATE) AS SMALLDATETIME)  = dd.CALENDAR_DT
 LEFT OUTER JOIN dbo.ZC_APPT_BLOCK zab
 ON zab.APPT_BLOCK_C = blk.BLOCK_C
 LEFT OUTER JOIN dbo.CLARITY_SER ser						ON blk.PROV_ID = ser.PROV_ID
    WHERE 1=1
-    AND blk.BLOCK_C IS NOT NULL
 	AND ( 
 			(@HierarchyLookup <> 8 AND blk.DEPARTMENT_ID IN (SELECT value FROM STRING_SPLIT(@Departments,',')))
 			OR
 			(@HierarchyLookup = 8 AND COALESCE(ser.RPT_GRP_EIGHT,'0')	IN (SELECT value FROM STRING_SPLIT(@Departments,',')) ) -- says department but the department parameter does department and financial subdivision
 			 )
 	AND blk.PROV_ID IN (SELECT value FROM STRING_SPLIT(@Providers,','))
-	-- AND blk.PROV_ID IN ('137163', -- Anna Morency
-	-- '83062', -- Kristen Weldon
-	-- '96293' -- Emily Bailey
-	-- )
+ --   AND dd.day_date >= @StartDate
+	--AND dd.day_date <= @EndDate
     AND dd.CALENDAR_DT >= @StartDate
-	AND dd.CALENDAR_DT <= @EndDate	
+	AND dd.CALENDAR_DT <= @EndDate
+
+	--AND blk.SLOT_BEGIN_TIME = '6/10/2025 08:00 AM'
+	
 
 ORDER BY blk.DEPARTMENT_ID
        , blk.PROV_ID
@@ -745,14 +732,6 @@ ORDER BY blk.DEPARTMENT_ID
 	   , CAST(blk.SLOT_BEGIN_TIME AS TIME)
 
   CREATE UNIQUE CLUSTERED INDEX IX_avail_block ON #avail_block (DEPARTMENT_ID, PROV_ID, SLOT_DATE, SLOT_BEGIN_TIME, LINE, BLOCK_NAME)
-
---   SELECT
--- 	*
---   FROM #avail_block
---   ORDER BY
--- 	PROV_ID,
--- 	DEPARTMENT_ID,
--- 	SLOT_BEGIN_TIME
 
 SELECT
 	department_id,
@@ -791,6 +770,7 @@ SELECT
 	prov_id,
 	slot_begin_time,
 	STUFF((
+	--SELECT ',' + CAST(innerTable.BLOCK_NAME AS varchar(30)) + ' ' + CAST(COUNT(innerTable.BLOCK_NAME) AS VARCHAR(5))
 	SELECT ',' + CAST(innerTable.BLOCK_NAME AS VARCHAR(30))
 	FROM #avail_block AS innerTable
 	WHERE innerTable.department_id = p.department_id
@@ -823,13 +803,23 @@ ORDER BY
 
   CREATE UNIQUE CLUSTERED INDEX IX_org_avail_blocks_summary ON #org_avail_blocks_summary (DEPARTMENT_ID, PROV_ID, SLOT_BEGIN_TIME)
 
+--SELECT
+--	DEPARTMENT_ID,
+--    PROV_ID,
+--    SLOT_BEGIN_TIME,
+--    block_count,
+--    block_name,
+--    org_avail_block_names
+--FROM #org_avail_blocks_summary
+
 SELECT
 	bbb.DEPARTMENT_ID,
     bbb.PROV_ID,
     bbb.SLOT_BEGIN_TIME,
     CASE WHEN oabs.block_name IS NOT NULL THEN oabs.block_name ELSE bbb.template_block_name END AS template_block_name,
 	ass.openings,
-    bbb.booked
+    bbb.booked--,
+	--oabs2.org_avail_block_names
 INTO #booked_by_block_plus
 FROM #booked_by_block bbb
 LEFT OUTER JOIN
@@ -845,6 +835,18 @@ WHERE block_count = 1
 ON oabs.DEPARTMENT_ID = bbb.DEPARTMENT_ID
 AND oabs.PROV_ID = bbb.PROV_ID
 AND  oabs.SLOT_BEGIN_TIME = bbb.SLOT_BEGIN_TIME
+--LEFT OUTER JOIN
+--(
+--SELECT
+--	DEPARTMENT_ID,
+--    PROV_ID,
+--    SLOT_BEGIN_TIME,
+--    org_avail_block_names
+--FROM #org_avail_blocks_summary
+--) oabs2
+--ON oabs2.DEPARTMENT_ID = bbb.DEPARTMENT_ID
+--AND oabs2.PROV_ID = bbb.PROV_ID
+--AND  oabs2.SLOT_BEGIN_TIME = bbb.SLOT_BEGIN_TIME
 LEFT OUTER JOIN
 (
 SELECT
@@ -853,6 +855,7 @@ SELECT
     SLOT_BEGIN_TIME,
     regular_openings,
     overbook_openings,
+    --openings,
     openings + outside_template_openings AS openings,
     outside_template_openings,
     num_apts_scheduled,
@@ -873,7 +876,17 @@ ORDER BY
 
   CREATE NONCLUSTERED INDEX IX_booked_by_block_plus ON #booked_by_block_plus (DEPARTMENT_ID, PROV_ID, SLOT_BEGIN_TIME, template_block_name)
 
- SELECT
+ -- SELECT
+	--DEPARTMENT_ID,
+ --   PROV_ID,
+ --   SLOT_BEGIN_TIME,
+ --   template_block_name,
+ --   openings,
+ --   booked--,
+ --   --org_avail_block_names
+ -- FROM #booked_by_block_plus
+
+SELECT
 	unique_booked_available.DEPARTMENT_ID,
     unique_booked_available.PROV_ID,
     unique_booked_available.SLOT_BEGIN_TIME,
@@ -894,6 +907,7 @@ SELECT
     booked.PROV_ID,
     booked.SLOT_BEGIN_TIME,
     booked.template_block_name AS block_name
+--FROM #booked_by_block booked
 FROM #booked_by_block_plus booked
 UNION ALL
 SELECT
@@ -925,7 +939,7 @@ SELECT
 	summary.num_regular_opening_apts_scheduled,
     summary.num_overbook_apts_scheduled,
     summary.num_outside_template_apts_scheduled,
-    summary.block_name,
+    COALESCE(summary.block_name,'Unknown') AS block_name,
     CASE WHEN summary.block_name IS NULL AND booked_by_block.booked IS NULL THEN 0
 			   WHEN summary.block_name IS NOT NULL AND booked_by_block.booked IS NULL THEN 0
 			   ELSE booked_by_block.booked
@@ -933,7 +947,6 @@ SELECT
 	avail_by_block.available AS org_available_block_openings,
 	summary.provider_type,
 	summary.visit_types,
-	summary.appt_status,
 	summary.regular_openings_available
 INTO #booked_available_by_block
 FROM
@@ -953,7 +966,6 @@ SELECT
     booked_available.block_name,
 	avail_slot.provider_type,
 	avail_slot.visit_types,
-	avail_slot.appt_status,
 	avail_slot.regular_openings_available
 
 FROM #avail_slot_summary avail_slot
@@ -994,11 +1006,11 @@ ORDER BY
 	summary.DEPARTMENT_ID,
     summary.PROV_ID,
     summary.SLOT_BEGIN_TIME,
-    summary.block_name
+    COALESCE(summary.block_name,'Unknown')
 
   CREATE NONCLUSTERED INDEX IX_booked_available_by_block ON #booked_available_by_block (DEPARTMENT_ID, PROV_ID, SLOT_BEGIN_TIME, block_name)
 
- SELECT
+SELECT
 	DEPARTMENT_ID,
     PROV_ID,
     SLOT_BEGIN_TIME,
@@ -1008,7 +1020,6 @@ ORDER BY
 	SUM(CASE WHEN block_name IS NOT NULL THEN 1 ELSE 0 END) AS blocks,
 	MAX(provider_type) AS provider_type,
 	MAX(visit_types) AS visit_types,
-	MAX(appt_status) AS appt_status,
 	MAX(regular_openings_available) AS regular_openings_available, 
 	STUFF((
 	SELECT ',' + CAST(innerTable.block_name AS varchar(30)) + ' ' + CAST(booked AS VARCHAR(5))
@@ -1051,7 +1062,6 @@ SELECT
 	booked_available_by_block_agg.blocks AS blocks_total,
 	booked_available_by_block_agg.provider_type,
 	booked_available_by_block_agg.visit_types,
-	booked_available_by_block_agg.appt_status,
 	booked_available_by_block_agg.blocks_booked,
 	booked_available_by_block.regular_openings_available
 INTO #booked_available_summary 
@@ -1067,6 +1077,89 @@ ORDER BY
     booked_available_by_block.block_name
 
   CREATE NONCLUSTERED INDEX IX_booked_available_summary ON #booked_available_summary (DEPARTMENT_ID, PROV_ID, SLOT_BEGIN_TIME, block_name)
+
+ -- SELECT
+	--*
+ -- FROM #booked_available_summary
+ -- ORDER BY
+	--DEPARTMENT_ID,
+	--PROV_ID,
+	--SLOT_BEGIN_TIME
+
+/*
+SELECT
+	department_id,
+	prov_id,
+	slot_begin_time,
+	STUFF((
+	SELECT ',' + CAST(innerTable.block_name AS varchar(30)) + ' ' + CAST((innerTable.openings - innerTable.booked_total) AS VARCHAR(10))
+	FROM #booked_available_summary AS innerTable
+	WHERE innerTable.department_id = p.department_id
+	AND innerTable.prov_id = p.prov_id
+	AND innerTable.slot_begin_time = p.slot_begin_time
+	FOR XML PATH('')
+	),1,1,'') AS total_openings_available
+INTO #booked_available_summary2
+FROM #booked_available_summary p
+WHERE openings > booked_total
+GROUP BY
+	DEPARTMENT_ID,
+    PROV_ID,
+    SLOT_BEGIN_TIME	
+ORDER BY
+	DEPARTMENT_ID,
+    PROV_ID,
+    SLOT_BEGIN_TIME	
+
+  CREATE UNIQUE CLUSTERED INDEX IX_booked_available_summary2 ON #booked_available_summary2 (DEPARTMENT_ID, PROV_ID, SLOT_BEGIN_TIME)
+
+SELECT
+	s1.DEPARTMENT_ID,
+	o.organization_name,
+	s.service_name,
+	c.clinical_area_name,
+    s1.PROV_ID,
+    s1.SLOT_BEGIN_TIME,
+	CAST(s1.SLOT_BEGIN_TIME AS DATE) AS SLOT_BEGIN_DATE,
+    s1.regular_openings,
+    s1.openings,
+    s1.block_name,
+    s1.booked,
+    s1.org_available_block_openings,
+    s1.booked_total,
+    s1.openings_available_total,
+    s1.blocks_total,
+	CASE
+		WHEN ((s1.openings = s1.booked) AND (s1.booked_total = s1.booked)) THEN 'Y'
+		WHEN ((s1.openings > s1.booked) AND (s1.booked_total = s1.booked)) THEN 'Y'
+		WHEN (s1.blocks_total =1 AND s1.booked = 0) THEN 'Y'
+		WHEN (s1.blocks_total >1 AND (s1.booked_total < s1.openings)) THEN 'Y'
+		WHEN (s1.openings > 0 AND s1.booked_total = 0) THEN 'Y'
+		WHEN ((s1.openings = s1.booked) AND (s1.booked_total > s1.booked)) THEN 'Y'
+		WHEN ((s1.booked > s1.openings) AND (s1.booked_total = s1.booked)) THEN 'Y'
+		ELSE NULL
+	END AS 'Keep?',
+    s1.overbook_openings,
+    s1.outside_template_openings,
+    s1.num_apts_scheduled,
+	s1.num_regular_opening_apts_scheduled,
+    s1.num_overbook_apts_scheduled,
+    s1.num_outside_template_apts_scheduled,
+	s1.provider_type,
+	s1.visit_types,
+	s1.blocks_booked,
+	s2.total_openings_available AS total_openings_available_string
+INTO #availability
+FROM #booked_available_summary s1
+LEFT OUTER JOIN #booked_available_summary2 s2
+ON s2.DEPARTMENT_ID = s1.DEPARTMENT_ID
+AND s2.PROV_ID = s1.PROV_ID
+AND s2.SLOT_BEGIN_TIME = s1.SLOT_BEGIN_TIME
+LEFT JOIN [CLARITY_App].[Mapping].[Epic_Dept_Groupers] g ON s1.DEPARTMENT_ID = g.epic_department_id
+LEFT JOIN [CLARITY_App].[Mapping].Ref_Clinical_Area_Map c on g.sk_Ref_Clinical_Area_Map = c.sk_Ref_Clinical_Area_Map
+LEFT JOIN [CLARITY_App].[Mapping].Ref_Service_Map s on c.sk_Ref_Service_Map = s.sk_Ref_Service_Map
+LEFT JOIN [CLARITY_App].[Mapping].Ref_Organization_Map o on s.organization_id = o.organization_id
+*/
 
 SELECT
 	s1.DEPARTMENT_ID,
@@ -1092,7 +1185,6 @@ SELECT
     s1.num_outside_template_apts_scheduled,
 	s1.provider_type,
 	s1.visit_types,
-	s1.appt_status,
 	s1.blocks_booked,
 	s1.regular_openings_available,
 	s2.org_avail_block_names
@@ -1106,6 +1198,37 @@ LEFT JOIN [CLARITY_App].[Mapping].[Epic_Dept_Groupers] g ON s1.DEPARTMENT_ID = g
 LEFT JOIN [CLARITY_App].[Mapping].Ref_Clinical_Area_Map c on g.sk_Ref_Clinical_Area_Map = c.sk_Ref_Clinical_Area_Map
 LEFT JOIN [CLARITY_App].[Mapping].Ref_Service_Map s on c.sk_Ref_Service_Map = s.sk_Ref_Service_Map
 LEFT JOIN [CLARITY_App].[Mapping].Ref_Organization_Map o on s.organization_id = o.organization_id
+/*
+SELECT DISTINCT
+	avail.DEPARTMENT_ID AS Department_Id,
+	dep.DEPARTMENT_NAME AS Department_Name,
+	avail.organization_name AS Organization,
+	avail.service_name AS [Service],
+	avail.clinical_area_name AS Clinical_Area,
+    avail.PROV_ID AS Provider_Id,
+	ser.PROV_NAME AS Provider_Name,
+	avail.provider_type AS Provider_Type,
+    avail.SLOT_BEGIN_TIME AS Slot_Begin_Time,
+    avail.SLOT_BEGIN_DATE AS Slot_Begin_Date,
+    avail.regular_openings AS Total_Regular_Openings,
+    avail.overbook_openings AS Total_Overbook_Openings,
+    avail.outside_template_openings AS Total_Outside_Template_Openings,
+    avail.openings AS Total_Openings,
+    avail.booked_total AS Total_Booked,
+    avail.openings_available_total AS Total_Openings_Available,
+    avail.blocks_total AS Blocks_Available,
+	avail.blocks_booked AS Booked_Blocks,
+	avail.visit_types AS Booked_Visit_Types,
+	avail.total_openings_available_string AS Openings_Available
+INTO #RptgTmp
+FROM #availability avail
+LEFT OUTER JOIN CLARITY.dbo.CLARITY_DEP dep
+	ON dep.DEPARTMENT_ID = avail.DEPARTMENT_ID
+LEFT OUTER JOIN CLARITY.dbo.CLARITY_SER ser
+	ON ser.PROV_ID = avail.PROV_ID
+WHERE [Keep?] = 'Y'
+AND avail.openings > avail.booked
+*/
 
 SELECT DISTINCT
 	avail.DEPARTMENT_ID AS Department_Id,
@@ -1118,12 +1241,18 @@ SELECT DISTINCT
 	avail.provider_type AS Provider_Type,
     avail.SLOT_BEGIN_TIME AS Slot_Begin_Time,
     avail.SLOT_BEGIN_DATE AS Slot_Begin_Date,
+    --avail.regular_openings AS Total_Regular_Openings,
     avail.regular_openings_available AS Total_Regular_Openings_Available,
+    --avail.overbook_openings AS Total_Overbook_Openings,
+    --avail.outside_template_openings AS Total_Outside_Template_Openings,
+    --avail.openings AS Total_Openings,
 	avail.org_avail_block_names AS Block_Names_Available,
     avail.booked_total AS Total_Booked,
+    --avail.openings_available_total AS Total_Openings_Available,
+    --avail.blocks_total AS Blocks_Available,
 	avail.blocks_booked AS Booked_Blocks,
-	avail.visit_types AS Booked_Visit_Types,
-	avail.appt_status AS Booked_Appt_Statuses
+	avail.visit_types AS Booked_Visit_Types--,
+	--avail.total_openings_available_string AS Openings_Available
 INTO #RptgTmp
 FROM #availability avail
 LEFT OUTER JOIN CLARITY.dbo.CLARITY_DEP dep
@@ -1146,14 +1275,41 @@ SELECT
     Block_Names_Available,
     Total_Booked,
     Booked_Blocks,
-    Booked_Visit_Types,
-    Booked_Appt_Statuses
+    Booked_Visit_Types
 FROM #RptgTmp
--- ORDER BY
--- 	Department_Id,
--- 	Slot_Begin_Time,
--- 	Provider_Id
 ORDER BY
 	Department_Id,
-	Provider_Name,
-	Slot_Begin_Time
+	Slot_Begin_Time,
+	Provider_Id
+/*
+SELECT
+	avail.Organization,
+	avail.Service,
+	avail.Clinical_Area,
+	avail.Department_Name,
+	avail.Provider_Name,
+	avail.Slot_Begin_Date,
+	avail.Slot_Begin_Time,
+	avail.Openings_Available,
+	SUM(avail.Total_Openings_Available) AS Total_Openings
+FROM #RptgTmp avail
+GROUP BY
+	avail.Organization,
+	avail.Service,
+	avail.Clinical_Area,
+	avail.Department_Name,
+	avail.Provider_Name,
+	avail.Slot_Begin_Date,
+	avail.Slot_Begin_Time,
+	avail.Openings_Available
+ORDER BY
+	avail.Organization,
+	avail.Service,
+	avail.Clinical_Area,
+	avail.Department_Name,
+	avail.Provider_Name,
+	avail.Slot_Begin_Date,
+	avail.Slot_Begin_Time,
+	avail.Openings_Available
+*/
+GO
