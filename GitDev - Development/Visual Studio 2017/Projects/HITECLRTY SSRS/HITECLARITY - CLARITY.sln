@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.35826.109
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "HITECLARITY - CLARITY", "HITECLARITY - CLARITY.rptproj", "{002A096C-8CD8-44D5-894B-927A8E6FAC21}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		DebugLocal|Default = DebugLocal|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.Debug|Default.ActiveCfg = Debug
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.Debug|Default.Build.0 = Debug
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.Debug|Default.Deploy.0 = Debug
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.DebugLocal|Default.Build.0 = DebugLocal
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.Release|Default.ActiveCfg = Release
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.Release|Default.Build.0 = Release
+		{002A096C-8CD8-44D5-894B-927A8E6FAC21}.Release|Default.Deploy.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {565FEA75-EAB5-460C-B164-6890C611D46A}
+	EndGlobalSection
+EndGlobal
