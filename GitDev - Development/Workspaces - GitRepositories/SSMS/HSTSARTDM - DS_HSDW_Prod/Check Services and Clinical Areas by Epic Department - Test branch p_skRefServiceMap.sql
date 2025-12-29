@@ -1,0 +1,33 @@
+USE DS_HSDW_Prod
+
+DECLARE @Organization TABLE (
+	[organization_id] [INT] NOT NULL)
+
+INSERT INTO @Organization
+(
+    organization_id
+)
+--SELECT Param AS organization_id FROM ETL.fn_ParmParse(@OrganizationId, ',')
+VALUES
+(1),
+(0)
+
+SELECT DISTINCT COALESCE(ids.sk_Ref_Service_Map,0) AS sk_Ref_Service_Map, COALESCE([service].[service_name],'Unmapped') AS [service_name]
+FROM
+(
+	SELECT DISTINCT [organization].organization_id, [service].sk_Ref_Service_Map AS sk_Ref_Service_Map
+	FROM
+	(SELECT sk_Ref_Service_Map, service_name, organization_id FROM DS_HSDM_App.Mapping.Ref_Service_Map
+	UNION ALL
+	SELECT 0 AS sk_Ref_Service_Map, 'Unmapped' AS service_name, 0 AS organization_id
+	) [service]
+	--INNER JOIN (SELECT organization_id FROM @Organization WHERE organization_id <> 0) organization
+	INNER JOIN @Organization organization
+	ON [service].organization_id = organization.organization_id
+                WHERE [service].sk_Ref_Service_Map NOT IN (55,56,57)
+) ids
+LEFT OUTER JOIN DS_HSDM_App.Mapping.Ref_Service_Map [service]
+ON [service].sk_Ref_Service_Map = ids.sk_Ref_Service_Map
+--UNION ALL
+--SELECT 0 AS sk_Ref_Service_Map, 'Unmapped' AS [service_name]
+ORDER BY 1,2;

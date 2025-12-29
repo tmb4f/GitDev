@@ -1079,132 +1079,9 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
   --SELECT
   --  *
   --FROM #RptgTmp4
-/*
+
   SELECT
-	--1 AS event_count,
-	CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after 18:00 or the event duration is less than 5 minutes 
-		WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0
-			AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_5 = 0
-			THEN 1
-		ELSE 0 END AS event_count,
-	'Discharge Lounge' AS 'event_category',	
-	CAST(dlrptg.START_TIME AS DATE)  AS event_date,
-    dlrptg.START_TIME AS PLC_Start_Event_Dttm,
-	dlrptg.START_USER_ID AS PLC_Start_Event_User_Id,
-    dlrptg.START_USER_NAME AS PLC_Start_Event_User_Name,
-	dlrptg.START_wd_Job_Posting_Title AS PLC_Start_Event_User_Job_Title,
-	dlrptg.START_Computer_Login_Id AS PLC_Start_Event_User_UVA_Computing_ID,
-    dlrptg.END_TIME AS PLC_End_Event_Dttm,
-	dlrptg.END_USER_ID AS PLC_End_Event_User_Id,
-    dlrptg.END_USER_NAME AS PLC_End_Event_User_Name,
-	dlrptg.END_wd_Job_Posting_Title AS PLC_End_Event_User_Job_Title,
-	dlrptg.END_Computer_Login_Id AS PLC_End_Event_User_UVA_Computing_ID,
-    dlrptg.PAT_ENC_CSN_ID AS Discharge_Encounter,
-    dlrptg.PAT_CLASS_NAME AS Discharge_Patient_Class,
-	dlrptg.PLC_Actual_Duration_Minutes,
-	dlrptg.PLC_Actual_Duration_Minutes_Less_Than_5,
-	dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time,
-    dlrptg.ADJUSTED_END_TIME AS Adjusted_PLC_End_Event_Dttm,
-	dlrptg.PLC_Adjusted_Duration_Minutes,
-	dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_5,
-    CASE WHEN dlrptg.IP_DISCHARGE_PROV_ID IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_ID ELSE dlrptg.OPHOV_VISIT_PROV_ID END AS Discharge_Encounter_Provider_Id,
-    CASE WHEN dlrptg.IP_DISCHARGE_PROV_NAME IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_NAME ELSE dlrptg.OPHOV_VISIT_PROV_NAME END AS Dischage_Encounter_Provider_Name,
-    CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS Dischatge_Encounter_Department_Id,
-    CASE WHEN dlrptg.IP_DEPARTMENT_NAME IS NOT NULL THEN dlrptg.IP_DEPARTMENT_NAME ELSE dlrptg.OPHOV_DEPARTMENT_NAME END AS Discharge_Encounter_Department_Name,
-	CASE WHEN dlrptg.IP_HOSP_DISCH_TIME IS NOT NULL THEN dlrptg.IP_HOSP_DISCH_TIME ELSE dlrptg.OPHOV_CHECKOUT_TIME END AS Source_Encounter_End_Dttm,
-    dlrptg.IP_LEVEL_OF_CARE_NAME AS Discharge_IP_Level_Of_Care,	
-    dlrptg.ORDER_DTTM AS Discharge_IP_Order_Dttm,	
-    dlrptg.ORDERING_PROV_ID AS Discharge_IP_Order_Provider_Id,
-    dlrptg.ORDERING_PROV_NAME AS Discharge_IP_Order_Provider_Name,
-    dlrptg.REQ_ACTIVATION_LOCAL_DTTM AS Transport_Request_Activation_Dttm,
-    dlrptg.EVENT_USER_ID AS Transport_Request_Assigned_User_Id,
-    dlrptg.EVENT_USER_NAME AS Transport_Request_Assigned_User_Name,
-    dlrptg.EVENT_LOCAL_DTTM AS Transport_Request_Completed_Dttm,
-    dlrptg.plf_from_name AS Discharge_Bed_Label,
-		
-/* Standard Fields */
-	/* Date/times */
-	dd.Fmonth_num AS 'Fmonth_num'	,
-	dd.Fyear_num AS 'Fyear_num',
-	dd.Fyear_name AS 'Fyear_name',
-
-/* Provider info */
-	dlrptg.ORDERING_PROV_ID		AS 'provider_id',
-	mdmprov.Prov_Nme	AS 'provider_name',
-	CAST(NULL AS INT)	AS 'prov_service_line_id'	,
-	mdmprov.Service_Line	AS 'prov_service_line',
-	CAST(CASE WHEN mdmprov.Financial_Division = 'na' THEN NULL ELSE mdmprov.Financial_Division END  AS INT) AS 'financial_division_id',
-	CAST(mdmprov.Financial_Division_Name AS VARCHAR(150))		AS 'financial_division_name',
-	CAST(CASE WHEN mdmprov.Financial_SubDivision ='na' THEN NULL ELSE mdmprov.Financial_SubDivision END AS INT) AS 'financial_sub_division_id',
-	CAST(mdmprov.Financial_SubDivision_Name AS VARCHAR(150))	AS 'financial_sub_division_name',
-	
-/* Fac/Org info */
-	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS 'epic_department_id',
-	mdmdept.epic_department_name		AS 'epic_department_name',
-	mdmdept.epic_department_name_external	AS 'epic_department_name_external'	,
-	mdmdept.LOC_ID		AS 'rev_location_id',
-	mdmdept.REV_LOC_NAME		AS 'rev_location',
-	CAST(mdmdept.POD_ID	AS VARCHAR(66))	AS 'pod_id',
-	mdmdept.PFA_POD	AS 'pod_name',
-	CAST(mdmdept.HUB_ID AS VARCHAR(66))	AS 'hub_id',
-	mdmdept.HUB				AS 'hub_name',
-
-/* Service line info */
-	mdmdept.hs_area_id AS 'hs_area_id'	,
-	mdmdept.hs_area_name AS 'hs_area_name',
-	--mdmdept.practice_group_id AS 'practice_group_id',
-	--mdmdept.practice_group_name	AS 'practice_group_name',
-	
-/* UPG Practice Info */
-	--CAST(vwdep.UPG_PRACTICE_REGION_ID	AS INT)  AS 'upg_practice_region_id',
-	--CAST(vwdep.UPG_PRACTICE_REGION_NAME AS VARCHAR(150))  AS 'upg_practice_region_name',
-	--CAST(vwdep.UPG_PRACTICE_ID			AS INT)		AS 'upg_practice_id',
-	--CAST(vwdep.UPG_PRACTICE_NAME		AS VARCHAR(150))		AS 'upg_practice_name',
-	--CAST(vwdep.UPG_PRACTICE_FLAG		AS INT)			AS 'upg_practice_flag',
-	
-/* SOM info */
-	orgmap.som_hs_area_id  AS 'som_hs_area_id'	,
-	CAST(orgmap.som_hs_area_name		AS VARCHAR(150)) AS 'som_hs_area_name',
-	orgmap.som_group_id	 AS 'som_group_id',
-	CAST(orgmap.som_group_name			AS VARCHAR(150))  AS 'som_group_name',
-	orgmap.department_id  AS 'som_department_id',
-	CAST(orgmap.department				AS VARCHAR(150))  AS 'som_department_name'	,
-	orgmap.Org_Number  'som_division_id',
-	CAST(orgmap.Organization			AS VARCHAR(150))	 AS 'som_division_name',
-
-/*Patient Info*/
-	vwpat.MRN_Clrt AS person_id,
-	vwpat.PAT_NAME AS person_name,
-	vwpat.BIRTH_DATE AS person_birth_date,
-	vwpat.Gender_Identity_Name AS person_gender,
-
-/* Others */
-	CAST(' Patient Journey Discharge Lounge Location Activity' AS VARCHAR(50))  AS 'event_type',
-	vwpat.sk_Dim_Clrt_Pt AS sk_Dim_Pt	,
-	g.[childrens_flag] AS peds,
-	mdmprov.sk_Dim_Physcn AS sk_dim_physcn,
-	o.organization_id,
-	COALESCE(o.[organization_name], 'No Organization Assigned') organization_name,
-	s.service_id,
-	COALESCE(s.[service_name], 'No Service Assigned') service_name,
-	c.clinical_area_id,
-	COALESCE(c.[clinical_area_name], 'No Clinical Area Assigned') clinical_area_name
-
-  FROM #RptgTmp4 dlrptg
-  LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	CAST(dlrptg.START_TIME AS DATE) = dd.day_date
-  LEFT JOIN	 CLARITY_App.Rptg.vwDim_Clrt_SERsrc						mdmprov		ON	dlrptg.ORDERING_PROV_ID = mdmprov.PROV_ID
-  LEFT JOIN	 CLARITY_App.Rptg.vwRef_MDM_Location_Master_EpicSvc		mdmdept		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END	= mdmdept.epic_department_id
-  LEFT JOIN CLARITY_App.Rptg.vwCLARITY_DEP							vwdep		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END = vwdep.DEPARTMENT_ID
-  LEFT JOIN CLARITY_App.Rptg.vwRef_OracleOrg_to_EpicFinancialSubdiv	orgmap		ON  mdmprov.Financial_SubDivision = orgmap.Epic_Financial_Subdivision_Code
-  LEFT JOIN CLARITY_App.rptg.vwDim_Clrt_Pt					     	vwpat		ON  vwpat.Clrt_PAT_ID =	dlrptg.PAT_ID
-  LEFT JOIN CLARITY_App.[Mapping].Epic_Dept_Groupers				g			ON g.epic_department_id =	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END
-  LEFT JOIN CLARITY_App.[Mapping].Ref_Clinical_Area_Map				c			ON c.sk_Ref_Clinical_Area_Map = g.sk_Ref_Clinical_Area_Map
-  LEFT JOIN CLARITY_App.[Mapping].Ref_Service_Map					s			ON s.sk_Ref_Service_Map = c.sk_Ref_Service_Map
-  LEFT JOIN CLARITY_App.[Mapping].Ref_Organization_Map				o			ON o.organization_id = s.organization_id
-  ORDER BY
-	dlrptg.START_TIME, dlrptg.PAT_ENC_CSN_ID
-*/
-  SELECT
+	  dlrptg.PLC_Start_Date  AS event_date,
     dlrptg.PAT_CLASS_NAME AS Discharge_Patient_Class,
 	--1 AS event_count,
 	CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after Latest_Dropoff_Time or the event duration is less than 15 minutes 
@@ -1214,7 +1091,6 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
 		ELSE 0 END AS event_count,
 	'Discharge Lounge' AS 'event_category',	
 	--CAST(dlrptg.START_TIME AS DATE)  AS event_date,
-	dlrptg.PLC_Start_Date  AS event_date,
     dlrptg.START_TIME AS PLC_Start_Event_Dttm,
 	dlrptg.START_USER_ID AS PLC_Start_Event_User_Id,
     dlrptg.START_USER_NAME AS PLC_Start_Event_User_Name,
@@ -1234,8 +1110,8 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
 	dlrptg.PLC_Adjusted_Duration_Minutes,
 	dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_15,
     CASE WHEN dlrptg.IP_DISCHARGE_PROV_ID IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_ID ELSE dlrptg.OPHOV_VISIT_PROV_ID END AS Discharge_Encounter_Provider_Id,
-    CASE WHEN dlrptg.IP_DISCHARGE_PROV_NAME IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_NAME ELSE dlrptg.OPHOV_VISIT_PROV_NAME END AS Dischage_Encounter_Provider_Name,
-    CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS Dischatge_Encounter_Department_Id,
+    CASE WHEN dlrptg.IP_DISCHARGE_PROV_NAME IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_NAME ELSE dlrptg.OPHOV_VISIT_PROV_NAME END AS Discharge_Encounter_Provider_Name,
+    CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS Discharge_Encounter_Department_Id,
     CASE WHEN dlrptg.IP_DEPARTMENT_NAME IS NOT NULL THEN dlrptg.IP_DEPARTMENT_NAME ELSE dlrptg.OPHOV_DEPARTMENT_NAME END AS Discharge_Encounter_Department_Name,
 	CASE WHEN dlrptg.IP_HOSP_DISCH_TIME IS NOT NULL THEN dlrptg.IP_HOSP_DISCH_TIME ELSE dlrptg.OPHOV_CHECKOUT_TIME END AS Source_Encounter_End_Dttm,
     dlrptg.IP_LEVEL_OF_CARE_NAME AS Discharge_IP_Level_Of_Care,	
@@ -1262,128 +1138,6 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
 	CAST(CASE WHEN mdmprov.Financial_Division = 'na' THEN NULL ELSE mdmprov.Financial_Division END  AS INT) AS 'financial_division_id',
 	CAST(mdmprov.Financial_Division_Name AS VARCHAR(150))		AS 'financial_division_name',
 	CAST(CASE WHEN mdmprov.Financial_SubDivision ='na' THEN NULL ELSE mdmprov.Financial_SubDivision END AS INT) AS 'financial_sub_division_id',
-	CAST(mdmprov.Financial_SubDivision_Name AS VARCHAR(150))	AS 'financial_sub_division_name',
-	
-/* Fac/Org info */
-	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS 'epic_department_id',
-	mdmdept.epic_department_name		AS 'epic_department_name',
-	mdmdept.epic_department_name_external	AS 'epic_department_name_external'	,
-	mdmdept.LOC_ID		AS 'rev_location_id',
-	mdmdept.REV_LOC_NAME		AS 'rev_location',
-	CAST(mdmdept.POD_ID	AS VARCHAR(66))	AS 'pod_id',
-	mdmdept.PFA_POD	AS 'pod_name',
-	CAST(mdmdept.HUB_ID AS VARCHAR(66))	AS 'hub_id',
-	mdmdept.HUB				AS 'hub_name',
-
-/* Service line info */
-	mdmdept.hs_area_id AS 'hs_area_id'	,
-	mdmdept.hs_area_name AS 'hs_area_name',
-	--mdmdept.practice_group_id AS 'practice_group_id',
-	--mdmdept.practice_group_name	AS 'practice_group_name',
-	
-/* UPG Practice Info */
-	--CAST(vwdep.UPG_PRACTICE_REGION_ID	AS INT)  AS 'upg_practice_region_id',
-	--CAST(vwdep.UPG_PRACTICE_REGION_NAME AS VARCHAR(150))  AS 'upg_practice_region_name',
-	--CAST(vwdep.UPG_PRACTICE_ID			AS INT)		AS 'upg_practice_id',
-	--CAST(vwdep.UPG_PRACTICE_NAME		AS VARCHAR(150))		AS 'upg_practice_name',
-	--CAST(vwdep.UPG_PRACTICE_FLAG		AS INT)			AS 'upg_practice_flag',
-	
-/* SOM info */
-	orgmap.som_hs_area_id  AS 'som_hs_area_id'	,
-	CAST(orgmap.som_hs_area_name		AS VARCHAR(150)) AS 'som_hs_area_name',
-	orgmap.som_group_id	 AS 'som_group_id',
-	CAST(orgmap.som_group_name			AS VARCHAR(150))  AS 'som_group_name',
-	orgmap.department_id  AS 'som_department_id',
-	CAST(orgmap.department				AS VARCHAR(150))  AS 'som_department_name'	,
-	orgmap.Org_Number  'som_division_id',
-	CAST(orgmap.Organization			AS VARCHAR(150))	 AS 'som_division_name',
-
-/*Patient Info*/
-	vwpat.MRN_Clrt AS person_id,
-	vwpat.PAT_NAME AS person_name,
-	vwpat.BIRTH_DATE AS person_birth_date,
-	vwpat.Gender_Identity_Name AS person_gender,
-
-/* Others */
-	CAST(' Patient Journey Discharge Lounge Location Activity' AS VARCHAR(50))  AS 'event_type',
-	vwpat.sk_Dim_Clrt_Pt AS sk_Dim_Pt	,
-	g.[childrens_flag] AS peds,
-	mdmprov.sk_Dim_Physcn AS sk_dim_physcn,
-	o.organization_id,
-	COALESCE(o.[organization_name], 'No Organization Assigned') organization_name,
-	s.service_id,
-	COALESCE(s.[service_name], 'No Service Assigned') service_name,
-	c.clinical_area_id,
-	COALESCE(c.[clinical_area_name], 'No Clinical Area Assigned') clinical_area_name
-
-  FROM #RptgTmp4 dlrptg
-  --LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	CAST(dlrptg.START_TIME AS DATE) = dd.day_date
-  LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	dlrptg.PLC_End_Date = dd.day_date
-  LEFT JOIN	 CLARITY_App.Rptg.vwDim_Clrt_SERsrc						mdmprov		ON	dlrptg.ORDERING_PROV_ID = mdmprov.PROV_ID
-  LEFT JOIN	 CLARITY_App.Rptg.vwRef_MDM_Location_Master_EpicSvc		mdmdept		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END	= mdmdept.epic_department_id
-  LEFT JOIN CLARITY_App.Rptg.vwCLARITY_DEP							vwdep		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END = vwdep.DEPARTMENT_ID
-  LEFT JOIN CLARITY_App.Rptg.vwRef_OracleOrg_to_EpicFinancialSubdiv	orgmap		ON  mdmprov.Financial_SubDivision = orgmap.Epic_Financial_Subdivision_Code
-  LEFT JOIN CLARITY_App.rptg.vwDim_Clrt_Pt					     	vwpat		ON  vwpat.Clrt_PAT_ID =	dlrptg.PAT_ID
-  LEFT JOIN CLARITY_App.[Mapping].Epic_Dept_Groupers				g			ON g.epic_department_id =	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END
-  LEFT JOIN CLARITY_App.[Mapping].Ref_Clinical_Area_Map				c			ON c.sk_Ref_Clinical_Area_Map = g.sk_Ref_Clinical_Area_Map
-  LEFT JOIN CLARITY_App.[Mapping].Ref_Service_Map					s			ON s.sk_Ref_Service_Map = c.sk_Ref_Service_Map
-  LEFT JOIN CLARITY_App.[Mapping].Ref_Organization_Map				o			ON o.organization_id = s.organization_id
-  ORDER BY
-	dlrptg.PAT_CLASS_NAME, CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after 18:00 or the event duration is less than 5 minutes 
-		WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0
-			AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_15 = 0
-			THEN 1
-		ELSE 0 END DESC, dlrptg.START_TIME, dlrptg.PAT_ENC_CSN_ID
-
-/*
-  SELECT
-    dlrptg.PAT_CLASS_NAME AS ADT_Patient_Class,
-    dlrptg.REQ_START_PLF_ID AS PLC_Start_Event_Location_Id,
-    dlrptg.REQ_END_PLF_ID AS PLC_End_Event_Location_Id,
-	1 AS event_count,
-	'Discharge Lounge' AS 'event_category',	
-	CAST(dlrptg.START_TIME AS DATE)  AS event_date,
-    dlrptg.START_TIME AS PLC_Start_Event_Dttm,
-	dlrptg.START_USER_ID AS PLC_Start_Event_User_Id,
-    dlrptg.START_USER_NAME AS PLC_Start_Event_User_Name,
-	dlrptg.START_wd_Job_Posting_Title AS PLC_Start_Event_User_Job_Title,
-	dlrptg.START_Computer_Login_Id AS PLC_Start_Event_User_UVA_Computing_ID,
-    dlrptg.END_TIME AS PLC_End_Event_Dttm,
-	dlrptg.END_USER_ID AS PLC_End_Event_User_Id,
-    dlrptg.END_USER_NAME AS PLC_End_Event_User_Name,
-	dlrptg.END_wd_Job_Posting_Title AS PLC_End_Event_User_Job_Title,
-	dlrptg.END_Computer_Login_Id AS PLC_End_Event_User_UVA_Computing_ID,
-    dlrptg.PAT_ENC_CSN_ID AS Discharge_Encounter,
-    -- dlrptg.PAT_CLASS_NAME AS Discharge_Patient_Class,
-    CASE WHEN dlrptg.IP_DISCHARGE_PROV_ID IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_ID ELSE dlrptg.OPHOV_VISIT_PROV_ID END AS Discharge_Encounter_Provider_Id,
-    CASE WHEN dlrptg.IP_DISCHARGE_PROV_NAME IS NOT NULL THEN dlrptg.IP_DISCHARGE_PROV_NAME ELSE dlrptg.OPHOV_VISIT_PROV_NAME END AS Dischage_Encounter_Provider_Name,
-    CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END AS Dischatge_Encounter_Department_Id,
-    CASE WHEN dlrptg.IP_DEPARTMENT_NAME IS NOT NULL THEN dlrptg.IP_DEPARTMENT_NAME ELSE dlrptg.OPHOV_DEPARTMENT_NAME END AS Discharge_Encounter_Department_Name,
-	CASE WHEN dlrptg.IP_HOSP_DISCH_TIME IS NOT NULL THEN dlrptg.IP_HOSP_DISCH_TIME ELSE dlrptg.OPHOV_CHECKOUT_TIME END AS Source_Encounter_End_Dttm,
-    dlrptg.IP_LEVEL_OF_CARE_NAME AS Discharge_IP_Level_Of_Care,	
-    dlrptg.ORDER_DTTM AS Discharge_IP_Order_Dttm,	
-    dlrptg.ORDERING_PROV_ID AS Discharge_IP_Order_Provider_Id,
-    dlrptg.ORDERING_PROV_NAME AS Discharge_IP_Order_Provider_Name,
-    dlrptg.REQ_ACTIVATION_LOCAL_DTTM AS Transport_Request_Activation_Dttm,
-    dlrptg.EVENT_USER_ID AS Transport_Request_Assigned_User_Id,
-    dlrptg.EVENT_USER_NAME AS Transport_Request_Assigned_User_Name,
-    dlrptg.EVENT_LOCAL_DTTM AS Transport_Request_Completed_Dttm,
-    dlrptg.plf_from_name AS Discharge_Bed_Label,
-		
-/* Standard Fields */
-	/* Date/times */
-	dd.Fmonth_num AS 'Fmonth_num'	,
-	dd.Fyear_num AS 'Fyear_num',
-	dd.Fyear_name AS 'Fyear_name',
-
-/* Provider info */
-	dlrptg.ORDERING_PROV_ID		AS 'provider_id',
-	mdmprov.Prov_Nme	AS 'provider_name',
-	CAST(NULL AS INT)	AS 'prov_service_line_id'	,
-	mdmprov.Service_Line	AS 'prov_service_line',
-	CAST(CASE WHEN mdmprov.Financial_Division = 'na'THEN NULL ELSE mdmprov.Financial_Division END  AS INT) AS 'financial_division_id',
-	CAST(mdmprov.Financial_Division_Name AS VARCHAR(150))		AS 'financial_division_name',
-	CAST(CASE WHEN mdmprov.Financial_SubDivision ='na'THEN NULL ELSE mdmprov.Financial_SubDivision END AS INT) AS 'financial_sub_division_id',
 	CAST(mdmprov.Financial_SubDivision_Name AS VARCHAR(150))	AS 'financial_sub_division_name',
 	
 /* Fac/Org info */
@@ -1440,8 +1194,9 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
 
   INTO #summary
 
-  FROM #RptgTmp dlrptg
-  LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	CAST(dlrptg.START_TIME AS DATE) = dd.day_date
+  FROM #RptgTmp4 dlrptg
+  --LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	CAST(dlrptg.START_TIME AS DATE) = dd.day_date
+  LEFT JOIN CLARITY_App.dbo.Dim_Date dd			ON	dlrptg.PLC_Start_Date = dd.day_date
   LEFT JOIN	 CLARITY_App.Rptg.vwDim_Clrt_SERsrc						mdmprov		ON	dlrptg.ORDERING_PROV_ID = mdmprov.PROV_ID
   LEFT JOIN	 CLARITY_App.Rptg.vwRef_MDM_Location_Master_EpicSvc		mdmdept		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END	= mdmdept.epic_department_id
   LEFT JOIN CLARITY_App.Rptg.vwCLARITY_DEP							vwdep		ON	CASE WHEN dlrptg.IP_DEPARTMENT_ID IS NOT NULL THEN dlrptg.IP_DEPARTMENT_ID ELSE dlrptg.OPHOV_DEPARTMENT_ID END = vwdep.DEPARTMENT_ID
@@ -1452,14 +1207,31 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
   LEFT JOIN CLARITY_App.[Mapping].Ref_Service_Map					s			ON s.sk_Ref_Service_Map = c.sk_Ref_Service_Map
   LEFT JOIN CLARITY_App.[Mapping].Ref_Organization_Map				o			ON o.organization_id = s.organization_id
   ORDER BY
-	-- dlrptg.START_TIME, dlrptg.PAT_ENC_CSN_ID
-	dlrptg.PAT_CLASS_NAME, dlrptg.START_TIME, dlrptg.PAT_ENC_CSN_ID
-
+    dlrptg.PLC_Start_Date,
+	  dlrptg.PAT_CLASS_NAME, CASE -- Exclude PLC Discharge Lounge events where the patient is dropped off after the Latest_Dropoff_Time for the Start date of the event or the event duration is less than 15 minutes 
+		  WHEN dlrptg.PLC_Start_Time_After_Latest_Dropoff_Time = 0
+			  AND dlrptg.PLC_Adjusted_Duration_Minutes_Less_Than_15 = 0
+			  THEN 1
+		  ELSE 0 END DESC, dlrptg.START_TIME, dlrptg.PAT_ENC_CSN_ID
+/*
   SELECT
     *
-  FROM #summary 
-  ORDER BY ADT_Patient_Class, Discharge_Encounter_Department_Name
-
+  FROM #summary
+  ORDER BY event_date, Discharge_Patient_Class, event_count DESC, PLC_Start_Event_Dttm, Discharge_Encounter
+*/
+-- /*
+  SELECT
+    MAX(event_date) AS Event_Start_Date,
+    Discharge_Patient_Class,
+    COUNT(*) AS Patients_Moved_To_Discharge_Lounge,
+    SUM(event_count) AS Event_Start_Time_On_or_Before_Latest_Dropoff_Time_and_Duration_Equal_To_or_Greater_Than_15_Minutes
+  FROM #summary
+  where event_date = '12/21/2025'
+  GROUP BY
+    Discharge_Patient_Class
+  ORDER BY
+    Discharge_Patient_Class
+-- */
   -- SELECT
   --   Discharge_Patient_Class AS ADT_Patient_Class,
   --   Discharge_Encounter_Department_Name AS Patient_Source_Department_Name,
@@ -1469,7 +1241,7 @@ ORDER BY dlrptg.PLC_Start_Date, dlrptg.PAT_ENC_CSN_ID, dlrptg.START_LOCATION_EVN
   -- FROM #summary
   -- GROUP BY Discharge_Patient_Class, Discharge_Encounter_Department_Name  
   -- ORDER BY Discharge_Patient_Class, Discharge_Encounter_Department_Name
-*/
+
 GO
 
 
