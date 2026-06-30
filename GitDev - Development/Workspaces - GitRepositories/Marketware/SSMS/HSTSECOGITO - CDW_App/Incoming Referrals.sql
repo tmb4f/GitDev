@@ -1000,7 +1000,9 @@ ORDER BY
 	PatientDurableKey,
 	HospitalEncounterEpicCsn,
 	DateKey,
-	trt.Code
+    trt.BillingAccountKey,
+	trt.Code,
+    trt.ProcSet
 
 
 /*
